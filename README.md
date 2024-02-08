@@ -17,7 +17,7 @@ debugging and creating code that generates code for
 execution. Performance should be adequate for most personal needs on
 modern equipment.
 
-License: 0BSD
+License: [0BSD](LICENSE)
 
 
 ## Prerequisites
@@ -40,7 +40,7 @@ and copies the files to it.
 For Un*x systems:
 1) Obtain a source distribution alpsSrcX-XX.tgz 
    where X-XX is the revision number.
-   Source is available on request to the author <dpenkler@gmail.com>
+   Source is available upon request to the author <dpenkler@gmail.com>
 2) Change to the directory in which you wish the alps directory to be
 created
 3) Extract the files:
