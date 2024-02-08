@@ -1,0 +1,34 @@
+/**** include file graf.h ***/
+
+extern int     ez_fd;
+extern int     gflag;
+extern void    alpsInitGraphics(int, char *argv[]);
+extern void    alpsDestroyWidget(pointer);
+extern void    alpsServiceWidgets();
+extern void    markWidgetTree(pointer);
+extern pointer glinit();
+extern pointer gclear();
+extern pointer gupdate();
+extern pointer proj(int);
+extern pointer genable  (int, pointer);
+extern pointer gdisable (int, pointer);
+extern pointer plot     (int, pointer);    
+extern pointer gmaterial(int, pointer);
+extern pointer glight   (int, pointer);  
+extern pointer glightmod(int, pointer);
+extern pointer gshademod(int, pointer);
+extern pointer gmkwdgt  (int, pointer); 
+extern pointer gcfgwdgt (int, pointer);
+extern pointer gdispwdgt(int, pointer);
+extern pointer ghidewdgt(int, pointer);
+extern pointer wdgtdata (int, pointer);
+extern pointer gsldrval (int, pointer);
+extern pointer gdialval (int, pointer);
+extern pointer gfsval   (int, pointer);  
+extern pointer gtxtval  (int, pointer); 
+extern pointer gtxtclr  (int, pointer); 
+extern pointer gtxtset  (int, pointer); 
+extern pointer gcanvas  (int, pointer); 
+extern pointer gsave    (int, pointer);
+extern pointer gload    (int, pointer);
+extern pointer gwar     (int, pointer);

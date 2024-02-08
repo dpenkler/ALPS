@@ -38,16 +38,16 @@ Installing alps creates a directory "alps" in your current directory
 and copies the files to it.
 
 For Un*x systems:
-1) Obtain a source distribution alpsSrcX-XX.tgz 
-   where X-XX is the revision number.
-   Source is available upon request to the author <dpenkler@gmail.com>
-2) Change to the directory in which you wish the alps directory to be
-created
-3) Extract the files:
+1) Obtain a source
 ```
-$ tar xzvf alpsSrcX-XX.tgz
+$ git clone https://github.com/dpenkler/ALPS ALPS
 ```
-4) Building the executable
+2) Change to the directory into which you cloned ALPS
+```
+$ cd ALPS
+```
+3) Building the executable:
+
 There ar a number of capabilities that can be activated by setting the capability identifier to 1 on the  **make** command line
 ```
 GRAF    enable graphics integration with EZWGL
@@ -56,7 +56,9 @@ SOUND   support for play & record
 SOCKET  enable networking support
 DEBUG   enable internal debug output (developers only)
 STATS   internal profiling support (developers only)
+```
 Other capabilities are controlled by the **FAST** identifier
+```
 If FAST==1 then
 PREEMPT task preemption        is turned off
 RANGE   range checking         is turned off
@@ -71,9 +73,14 @@ TDEBUG  lisp trace & debug     is turned on
 TAIL    tail recursion removal is turned off
 ```
 To otherwise modify the capabilities requires modifying the #defines in alps.c
+
+By default it builds an executable for a X86-64 linux system HOST=LINUX64
+
+You can specify other targets such as an x86 linux system: HOST=LINUX32 if you have a 32 bit build environment.
+See [alps.h](src/alps.h) for other targets. The Makefile may need to be modified.
 ```
 $ make [GRAF=1] [SOUND=1] [etc]
-````
+```
 5) Put the alps directory in your execution path or link the
 alps executable into a directory in your current execution path.
 6) Copy the file lisp/doalps to the alps directory as .alps and modify
@@ -84,7 +91,7 @@ it to your needs. .alps is read by alps at startup
 ```
 $ cd <path to alps directory>
 $ ./alps
-alps LINUX 32bit Interpreter V6.99
+./alps Linux 64bit Interpreter V8.34 128MB
 loading .alps
 loading prims.al
 loading dll.al
