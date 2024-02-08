@@ -49,6 +49,7 @@ $ tar xzvf alpsSrcX-XX.tgz
 ```
 4) Building the executable
 There ar a number of capabilities that can be activated by setting the capability identifier to 1 on the  **make** command line
+```
 GRAF    enable graphics integration with EZWGL
 INSTCON enable gpib instrument control
 SOUND   support for play & record 
@@ -68,6 +69,7 @@ RANGE   range checking         is turned on
 CKARGS  argument checking      is turned on
 TDEBUG  lisp trace & debug     is turned on
 TAIL    tail recursion removal is turned off
+```
 To otherwise modify the capabilities requires modifying the #defines in alps.c
 ```
 $ make [GRAF=1] [SOUND=1] [etc]
