@@ -1,0 +1,10 @@
+;-*- mode: emacs-lisp; -*-
+; Example initial load file in current directory used on alps startup
+(setq #LP (list  "." "lisp"))
+; keyboard bindings <Ctrl-o> char for deficient android keyboards
+(a #KB '((l "'(lambda ())\B\B") (L "(load ')\B")
+	 (a "[") (b "]") (A "{") (B "}") (c "\\") (C "|")))
+(load "prims.al")
+;(load "qt.al")
+;(load 'cgol)
+;(cgol (getf "data/gldr") 100)
