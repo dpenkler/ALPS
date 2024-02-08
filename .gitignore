@@ -1,0 +1,21 @@
+#
+# gitignore for alps
+#
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.tgz
+*.gcno
+/src/TAGS
+/priv/
+/local/
+!.gitignore
+*.orig
+*~
+\#*#
+core
+Changelog
+alps
+alpsf
