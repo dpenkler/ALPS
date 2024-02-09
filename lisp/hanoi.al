@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (defun Hanoi (N) ;; move disks from Peg1 to Peg2
   (let* ((#IO 1) (I 1) (D (mapcar '(lambda (X) (fmt "D" X)) (explod (i N)))))
     (Hanaux D 'Peg1 'Peg2 'Peg3)))

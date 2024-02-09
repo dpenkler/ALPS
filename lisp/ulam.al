@@ -1,3 +1,11 @@
+;;;-*- mode: emacs-lisp -*-
+;;
+;; Explore algorithms to generate Ulam's spiral
+;;
+
+;; Ulam and Ulam2 are defined in idioms.al
+
+
 (require 'prime)
 (defun uli (N)  ;; A fresh attempt
   (let* ((#IO 0) (NN (sqr N)) (G (f (/ N 2))) (F (vtr {G (- G (~ (| 2 N)))}))

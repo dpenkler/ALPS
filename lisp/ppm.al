@@ -1,3 +1,5 @@
+;;;-*- mode: emacs-lisp -*-
+
 (defun ReadPPM (N) ;; Read ppm file with name N
   "Returns an WxHx3 array where the last dimension contains the R G B values"
   (let ((F (open N)) Line (Buf (buf "")) W H Image

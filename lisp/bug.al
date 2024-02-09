@@ -1,3 +1,5 @@
+;;;-*- mode: emacs-lisp -*-
+
 (defun bug ()
   (let ((Name 'name)
 	(Parameters 'parms)

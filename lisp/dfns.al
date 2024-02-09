@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;					
 ;; Whimsical attempt at an apl style direct function definition
 ;;

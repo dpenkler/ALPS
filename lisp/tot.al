@@ -1,3 +1,5 @@
+;;;-*- mode: emacs-lisp -*-
+
 ;;;                    notation as a Tool Of Thought
 
 ;;; Adapted for alps from Kenneth Iverson's paper of the same name at

@@ -1,6 +1,12 @@
+;;;-*- mode: emacs-lisp -*-
+;;
+;; Newton's Opticks in 2D
+;;
+
 (require 'geom)
 (require 'opt)
 (require 'graf)
+(unless (boundp 'DEBUG) (a DEBUG nil))
 ;; Env is a list of Objects
 ;; An Object is a pair (X G)
 ;;     where X is a property vector and G is the associated geometric object
@@ -65,7 +71,6 @@
   (let ((R (RProj Ray 1e7)))
     (mapcan
      '(lambda (Obj)
-	;; (print (list "Examining " (rav (cadr X))))
 	(let ((L (findPoIs R (objType Obj) (getGeom Obj) Side)))
 	  (if (gt (len L) 0)
 	      (list (list Obj (sort '(lambda (X Y)
@@ -101,11 +106,11 @@
     (if (not (inside S Frame)) (error "Ray starts outside of frame"))
     (if (gt (len (PtInEnvObjs S Env)) 0)
 	(error "Ray must not start in another object"))
-    ;; (ShowV ("Enter newton " Index))
+    ;;(ShowV ("Enter newton " Index))
 NextObj   ;; For each object
-    ;;(print (list "Searching for objects pierced by " (DEG (RSlope Ray))))
+    ;; (print (list "Searching for objects pierced by " (deg (RSlope Ray))))
     (while (lt 0 (len (a L (findObjects Ray Side Env))))
-      ;;(print (list 'num-objs (len L)))
+      ;; (print (list 'num-objs (len L)))
       
       (a Rin (RSlope Ray)    ; Incoming ray angle
 	 NOE (nearestOE S L) ; get nearest (object edge) combo
@@ -117,13 +122,12 @@ NextObj   ;; For each object
 	 PoI  (getPoI NED))  ; point of Incidence of ray and nearest side
 
       (a NextN (if (null NON) 1 (NON (aref VisFR Index)))) ; get actual ref ind
-      ;;(ShowV ((DEG Rin) N NextN))
+      ;; (ShowV ((deg Rin) N NextN))
 
-      ;;(princl (fmt "Found a " (aref ObjDes (+ 1 (objType NOB))) " at "  PoI))
+      ;; (princl (fmt "Found a " (aref ObjDes (+ 1 (objType NOB))) " at "  PoI))
       (addPath S PoI)
 
       (a S PoI) 
-      ;; (DrawNorm Norm) ; Draw the normal so we can see what is going on
       
       (cond ((isLine NOB)
  	     (if (zerop (getPropR NOP)) (return Path)) ;; zero reflectivity
@@ -131,7 +135,7 @@ NextObj   ;; For each object
 		Phi1 (Adj (- (Flip Rin) N1)) ;; angle between Rin and Normal
 		Rout (Adj (- N1 Phi1)) ;; Calc reflected angle
 		Ray (mkRay S Rout))    ;; Make new ray with Rout
-	     ;;(ShowV DEG (N1 Rin Phi1 Rout))
+	     ;; (ShowV deg (N1 Rin Phi1 Rout))
 	     (go 'NextObj))
 	    ((isArc NOB) ;; Do Arc thing
  	     (if (zerop (getPropR NOP)) (return Path)) ;; this ray going nowhere
@@ -140,7 +144,7 @@ NextObj   ;; For each object
 		Phi1 (Adj (- (Flip Rin) N1))
 		Rout (Adj (- N1 Phi1)) ;; Calc reflected angle
 		Ray (mkRay S Rout))    ;; Make new ray with Rout
-	     ;;(ShowV DEG (N1 Rin Phi1 Rout))
+	     ;; (ShowV deg (N1 Rin Phi1 Rout))
 	     (go 'NextObj))
 	    ((isPoly NOB));; drop through
 	    (t (mapc PLLS Path) (Error "Unsupported object")))
@@ -157,7 +161,7 @@ NextObj   ;; For each object
 	 N NextN R (aref NOP 2) ; set new properties for object entered by Ray
 	 sProp (pop 'PropStk) NextN (aref sProp 1) ; restore previous props
 	 Exited nil)
-      ;;(ShowV ((DEG Rint) N NextN)) 
+      ;;(ShowV ((deg Rint) N NextN)) 
       (while (not Exited)
 	;;(print (list "Checking out NOB " (rav (getGeom NOB))))
 	(a L (findPoIs (RProj Ray 1e7) PolyTp (getGeom NOB) Side))
@@ -187,8 +191,8 @@ NextObj   ;; For each object
 	 N NextN                  ;; restore previous N
 	 Ray (mkRay S Rout))      ;; Make new Ray for the next round
       (when (onep Index) ()
-	;;(ShowV DEG (N1 Phi1 p1 RintV p2 N2 Phi2))
-	;;(ShowV DEG (Rin Rout Delta))
+	;;(ShowV deg (N1 Phi1 p1 RintV p2 N2 Phi2))
+	;;(ShowV deg (Rin Rout Delta))
 	)
       ) ; while
 Escape

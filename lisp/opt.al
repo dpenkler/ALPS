@@ -1,3 +1,8 @@
+;;;-*- mode: emacs-lisp -*-
+
+;;;
+;;; Optical constants and functions
+;;;
 
 (defun SMR (L) ; returns wavelength (um) dependent refractive index 
    (let ((LL (sqr L)) ;Sellmeier coefficients for Schott K crown glass

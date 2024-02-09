@@ -1,4 +1,4 @@
-;
+;;;-*- mode: emacs-lisp -*-;
 ; Simulate uplink coding for CDMA IS-95 spread spectrum standard
 ;
 

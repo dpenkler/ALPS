@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (require 'idioms)
 
 (defun Hex2N (S) "Convert Hex string to singleton num"

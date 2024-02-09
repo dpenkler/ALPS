@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;; LIF utilities
 (de wd16 (B O);  ; 16 bit number from 2 chrs of B at offset O
     (dec 256 (num (aref B (+ O [0 1])))))

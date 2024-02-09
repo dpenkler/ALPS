@@ -1,4 +1,6 @@
-; quasiquote adventure
+;;;-*- mode: emacs-lisp -*-
+
+;;; quasiquote adventure
 
 (a qq   'qquote)
 (a qqc  ',)

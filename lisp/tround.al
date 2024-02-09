@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (defun TROUND ()
   (prog ((#PP -1) (#IO 0) (#CT 1e-12)
 	 (A [12345 1.2345 12345e3 12345e-7])

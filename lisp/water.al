@@ -1,3 +1,7 @@
+;;;-*- mode: emacs-lisp -*-
+
+;;; From WINSTON
+
 (defun water (A B C) 
 	(prog (W1 W2)
 	      (setq #PP 0)

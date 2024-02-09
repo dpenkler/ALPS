@@ -1,3 +1,7 @@
+;;;-*- mode: emacs-lisp -*-
+;;;
+;;; Exponentials
+;;;
 (defun g (F X N) 
   (let ((#IO 1) (Y (p N X)))
     (FOR I 2 N (aset Y (F (aref Y (- I 1))) I))

@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;
 ;; Test for stencil using cgol
 ;;

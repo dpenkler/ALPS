@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;
 ;; fun with Leonardo Fibonacci 1170-1250 and friends
 ;;

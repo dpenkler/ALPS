@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 
 (defun GenTr (S) 
   "(GenTr <number of elements in dimension> <number of dimensions>)"

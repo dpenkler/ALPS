@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;; gc bound due to atm alloc
 (defun Queens (N) ; fully functional version
   ((label FB lambda 

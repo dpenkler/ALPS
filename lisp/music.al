@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (defconst music_A_frequency 440) ; Hz
 
 (defconst music_speed_of_sound 345) ; m/s

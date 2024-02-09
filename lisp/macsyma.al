@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;;; Code from Paradigms of AI Programming
 ;;;; Copyright (c) 1991 Peter Norvig
 

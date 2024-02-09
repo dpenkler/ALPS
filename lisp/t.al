@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (de NCONC (X Y)
     (prog (M)
 	  (go (cond ((null X) 'RETY) (t 'CONT)))

@@ -1,3 +1,7 @@
+;;;-*- mode: emacs-lisp -*-
+;;;
+;;; run a separate helper process
+;;;
 (defun helper ()
   (sys "alps -d &")
   (wait 2)

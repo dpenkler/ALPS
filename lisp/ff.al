@@ -1,3 +1,8 @@
+;;;-*- mode: emacs-lisp -*-
+;;;
+;;; Find free variables
+;;;
+
 (defun FindFree (F Vars Detail)
   "Find free variable refences in expression F with initial list of bound variables Vars"
   (let ((FreeVars nil) Parse CheckSym AddVars AddVars* ParseList ParseCond GetLabels T)

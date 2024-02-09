@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (defun TPRI (N LIM) ; test priority scheduling
   "(TPRI N LIM) N=number of tasks LIM num iterations in task"
   (let ((#IO 1) L Res T

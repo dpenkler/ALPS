@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (require 'prime)
 
 (defun genKeys(R) 

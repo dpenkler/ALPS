@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (defun PROB (P X N) (* (! X N) (* (exp P X) (exp (- 1 P) (- N X)))))
 (defun POIS (P X N) (/ (* (exp (* N P) X) (exp (- (* N P)))) (! X)))
 (defun HYP (X N n m) (/ (* (! X m) (! (- N m) (- n x))) (! N n)))

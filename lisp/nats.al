@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (de nats (f x y) ; adapted from http://dfns.dyalog.com/c_nats.htm
     (let* ((#IO 0) (px 1) (rx (exp 10 px))
 	   dfm dfd dlz dlzs zro ndn nat chk rep mix arith)

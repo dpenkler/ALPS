@@ -21,20 +21,22 @@
 	   $[LOOP]))
     R))
 
-(defun rgcd (x y) (if (zerop y) (| x) (gcd y (| y x)))) ; recursive version
-
 (defun Ggcd (V) (cond ((ge 1 (p V)) V)
 		    ((Ggcd ((lambda (V) (k (* V ) V)) 
 			    ((lambda (R V)(cat (| R V) R)) (r 'f V) V))))))
 
 (defun Egcd (x y) ; Euclid's original method using repeated subtraction
-  (cond ((lt x y) (gcd x (- y x)))
-	((gt x y) (gcd y (- x y)))
-	((t x))))
+  (while (ne x y)
+    (cond ((lt x y) (a y (- y x)))
+	  (t (a x (- x y)))))
+  x)
 
-(defun Rgcd (x y))
-
-(defun deco (m) (dec 20 (r '+ (o '= "$%^&" m))))
+;; (GCD 77 63)    ;=> 7
+;; (lgcd 77 63)   ;=> 7
+;; (gcd 77 63)    ;=> 7
+;; (Egcd 77 63)   ;=> 7
+;; (Gcd [77 63])  ;=> 7
+;; (Ggcd [77 63]) ;=> [7]
 
 (defun cf (n d)
   "Expression for continued fraction numerator n denominator d"

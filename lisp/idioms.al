@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;; An alps rendition of a selection of APL Idioms from Perliss &
 ;;; Rugaber APL Idiom List Research Report #87 (Yale) April 1977
 ;;; with various supplements.

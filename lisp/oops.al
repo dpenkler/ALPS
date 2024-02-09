@@ -1,3 +1,9 @@
+;;;-*- mode: emacs-lisp -*-
+
+;;;
+;;; Object Oriented Programming
+;;;
+
 (defun memc (X S) 
         (cond ((null S) nil) 
               ((eq (car (car S)) X) S) 

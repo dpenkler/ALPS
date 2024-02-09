@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (setq pi (% 1) -pi (% -1) pi/2 (% 0.5) -pi/2 (% -0.5) pi*2 (% 2))
 (defun sin   (x) (% 1 x))
 (defun cos   (x) (% 2 x))

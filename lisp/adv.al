@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;;; adv.al --- A simple text-based adventure game.
 ;; Copyright (C) 2007 Conrad Barski
 

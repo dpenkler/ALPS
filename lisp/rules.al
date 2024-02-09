@@ -1,3 +1,6 @@
+;;;-*- mode: emacs-lisp -*-
+
+;;; From WINSTON
 
 (setq FACTS (quote (
 (ANIMAL HAS HAIR)

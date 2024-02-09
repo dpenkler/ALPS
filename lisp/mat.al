@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 (de cpxm/ (M) "Inverse of a complex matrix M"
     (if (nump M) (m/ M)
       (let* ((A (re M)) (B (im M)) (A-1 (m/ A)) (B-1 (m/ B))

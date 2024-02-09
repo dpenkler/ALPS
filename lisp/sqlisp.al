@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;; Quasi-Sesqui-Lisp: a LISP 1.5 evaluator in ALPS
 
 (defun sqltest () 

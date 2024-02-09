@@ -1,4 +1,7 @@
 ;;;-*- mode: emacs-lisp; -*-
+;;;
+;;; Graphics constants and functions
+;;;
 (require 'trig)
 (a EZ_X                      1
  EZ_Y                      2

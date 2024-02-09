@@ -1,4 +1,5 @@
-; Computational geometry in 2D Euclidean Space
+;;;-*- mode: emacs-lisp -*-
+;; Computational geometry in 2D Euclidean Space
 
 ;; Some basic objects:
 ;; Point: a vector [X Y]
@@ -65,8 +66,8 @@
 	 (ab2  (r '- 1 (rot 1 (rot 1 [0 1] LS2))))
 	 (c1 (- (det LS1)))
 	 (c2 (- (det LS2)))
-         (r2 (+ (. '+ '* LS2 (tr ab1)) c1))
-         (r1 (+ (. '+ '* LS1 (tr ab2)) c2))
+         (r2 (+ (. '+ '* LS2 (vtr ab1)) c1))
+         (r1 (+ (. '+ '* LS1 (vtr ab2)) c2))
 	 denom)
     ;; (ShowV (ab1 ab2 c1 c2 r1 r2))
     ;; no intersection if both points of LS2 lie on the same side of LS1

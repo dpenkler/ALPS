@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;; Base 64 encode and decode routines
 
 (a eb64_ET "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")

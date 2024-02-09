@@ -1,4 +1,5 @@
-; Some Common Lisp compatibility routines
+;;;-*- mode: emacs-lisp -*-
+;;; Some Common Lisp compatibility routines
 (a second       'cadr
    third        'caddr
    rest         'cdr

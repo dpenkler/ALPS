@@ -1,3 +1,4 @@
+;;;-*- mode: emacs-lisp -*-
 ;; Fun with factorials
 
 ;; The intuitive implementation of the factorial function for whole numbers

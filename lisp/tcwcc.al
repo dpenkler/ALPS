@@ -1,6 +1,6 @@
-; -*- mode: emacs-lisp; -*-
+;;; -*- mode: emacs-lisp; -*-
 
-; cwcc tests
+;;; Call With Current Continuation (cwcc) tests
 
 (defun TCC (X N) ;; R is free here so we can play with it in TT
   ;; (TCC '(a b c end) 3)    ;; no continuation called

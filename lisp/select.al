@@ -1,3 +1,5 @@
+;;;-*- mode: emacs-lisp -*-
+;;; Select and word from a list
 (a HOME    (chr [27 91 72])
    CLEARL  (chr [27 91 50 75])
    CLEARTE (chr [27 91 75])

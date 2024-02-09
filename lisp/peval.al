@@ -1,3 +1,8 @@
+;;;-*- mode: emacs-lisp -*-
+;;
+;; Testing parallel evaluation
+;;
+
 (defun TPEVAL (N) 
    (prog ((TTQ '(lambda (X) (TQ X) (fmt "(TQ " X ") Round number "(incr TQC))))
 	  (TQC 0) TTASK Terminator R Z T TP)

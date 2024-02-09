@@ -1,4 +1,5 @@
-;;; show some graphics
+;;;-*- mode: emacs-lisp -*-
+;;; show some graphics with newton
 (require 'graf)
 (require 'geom)
 (require 'newton)
@@ -25,7 +26,7 @@
   "plot arc with radius r, centre R, start angle S and end angle E"
   (let* ((#IO 0) (NS 1000)
 	 (AV (p {2 NS} (+ S (* (Adj (- E S)) (/ (i NS) NS))))))
-    (graf (+ (tr R) (* r (% (tr [2 1]) AV))))
+    (graf (+ (vtr R) (* r (% (vtr [2 1]) AV))))
     NS))
 
 (defun mkWin (XY) (rav (tr (p [2 2] {(- XY) XY}))))
@@ -59,7 +60,7 @@
 	 (PLLS NLS)
 	 (a N (mkNorm NLS 2 (aref NLS 2 ())))
 	 (PLLS N)
-	 (print (list I (DEG R) 'LS (DEG (Slope NLS)) 'N (DEG (Slope N)))))))
+	 (print (list I (deg R) 'LS (deg (Slope NLS)) 'N (deg (Slope N)))))))
 
 (defun TArc (S)
   (let ((LS (p [2 2] {S (+ (Xc S) 8) (Yc S)})) NLS N N1 N2 R (#PP 2) A)
@@ -83,7 +84,7 @@
     (FOR I 0 16
 	 (gclear)
 	 (a RotAng (% (/ (* I 2) 16)))
-	 (print (list 'RotAng (DEG RotAng)))
+	 (print (list 'RotAng (deg RotAng)))
 	 (a Trg (RotP T O RotAng))
 	 (PLPoly Trg)
 	 (FOR J 0 2
@@ -91,7 +92,7 @@
 		 MidPt (midpt Side)
 		 Norm (mkNorm Side 1 MidPt))
 	      (tab 4)
-	      (print (list 'MidPt MidPt 'Snorm (DEG (Slope Norm))))
+	      (print (list 'MidPt MidPt 'Snorm (deg (Slope Norm))))
 	      (MK MidPt)
 	      (PD Norm)
 	      )
@@ -99,7 +100,7 @@
 
 (defun TLCirc (LS R r)
   (let (IP LSI #PN)
-    (PLArc r R 0 pi)    (PLArc r R -pi 0)
+    (PLArc r R 0 pi 0)    (PLArc r R -pi 0 0)
     (FOR I -6 6
 	 (a LSI (+ (p [2 2] {0 I}) LS))
 	 (a #PN 1)
@@ -163,7 +164,7 @@
 
 (defun TRArc (St L LS r Ang)
   ;;Test reflection rays and arcs
-  ;; (FOR I 6 35  (TRA [0 -10] 30 (p [2 2] [-5 7 5 7]) I pi/2) (wait .2))
+  ;; (FOR I 6 35  (TRArc [0 -10] 30 (p [2 2] [-5 7 5 7]) I pi/2) (wait .2))
   (let* ((#IO 0) (#WN (mkWin [10 10])) #PN IP oRay T
 	 LS1 RS N1 Phi1 NS Done PoI NPoI Rin Rint
 	 (S (RotP St [0 0] Ang))
@@ -186,17 +187,16 @@
 		      RS (RProj oRay 20)
 		      NS X)
 ;;		   (ShowV 'rav (RS NS))
-;;		   (ShowV DEG (Rint N1 Phi1 Rout))
+;;		   (ShowV deg (Rint N1 Phi1 Rout))
 		   (a Rint Rout)))
 	)
     (Ginit2D)
     (gclear)
     (apply PLArc A)
-    (PLLS (RBase (tr (tk 2 #WN))))
     (se `(setSlope ,Rin) Ray)
     (FOR I  (* 2 (- N)) (* 2 N) ;; Rays shining on arc
 	 (a Path nil)
-	 (a NS (RBase (+ (* I LI) (Xc S)))) ;; Next start
+	 (a NS (RBase (+ (* I LI) (Xc S))))  ;; Next start
 	 (se `(setStart ,NS) Ray)            ;; Patch Ray
 	 (a RS (RProj Ray L)                 ;; Ray segment
 	    Rint Rin
@@ -205,7 +205,7 @@
 	 (while (not Done)
 	   (a IP (ILArc RS A))
 	   (ShowV ((rav RS) NS IP))
-	   (ShowV DEG (Rint))
+	   (ShowV deg (Rint))
 	   (cond ((null IP)
 		  (print 'null) (apply addPath (explod 1 RS)) (a Done t))
 		 ((onep (len IP))
@@ -231,19 +231,22 @@
 (defun TNewt (A S O L T R I0)
   ;; A Apex of triangle1, S source of Ray, O Apex coord of triange 1
   ;; L x-axis shift for triangle 2, T time to wait
-  ;; AAA =  (TNewt 45 [-9.9 .95] [-6.5 4.5] 13 .02 11.42 8.5)
+  ;; R Radius of curvature of ceiling mirror
+  ;; I0 final ray angle
+  ;; AAA =  (TNewt 45 [-9.9 1.5] [-6.5 4.5] 13 .02 11.42 -48)
   ;; $ convert -delay 7 -loop 1 *.ppm AAA.gif
 
   (prog* ((#WN [-10 10 -2 5])
 	  (#PN 1)
 	  (Frame (mkRect (tr (p [2 2] #WN))))
-	  (N (p VisFR)) (Ang (RAD A))
+	  (N (p VisFR)) ;; number of visible colours
+	  (Ang (rad A))
 	  (C (RotP (mkTriang Ang 7 7 O) O (% 0)))
 	  (A (mkArc (p [2 2] [-.5 4.5 .5 4.5]) R))
 	  (R (aref (mkRect (tr (p [2 2] [-2.1 2.1 .7 1]))) [1 4 3 2] ()))
 	  (L1 (p [2 2] [10 -2 -17 -2]))
 	  (L2 (p [2 2] [10 4.5 -10 4.5]))
-	  (M1 (p [2 2] [-4.7 .5 -4.2 -.2]))
+	  (M1 (p [2 2] [-3.7 -2  -3 -1.95]))
 	  (M2 (p [2 2] [3 -1.95 3.7 -2]))
 	  (Side (aref C (cond ((eq (Xc S) (Xc O)) [2 3])
 			      ((lt (Xc S) (Xc O)) [1 2])
@@ -251,8 +254,8 @@
 	  (MidPt  (midpt Side )) ; midpoint prism on side of source
 	  (Paths (tk N $[]))
 	  ;; alist of objects and their $[fn r t]	 
-	  (Objs (list (list ${SMR 0 PolyTp} C)
-		      (list ${SMR 0 PolyTp}
+	  (Objs (list (list ${SMR 0 PolyTp} C) ;; triangle 1
+		      (list ${SMR 0 PolyTp}    ;; triange 2
 			    (MovP C ;(RotP C O (% 1))
 				  {L 0}))
 			    ;;(- (* (LSLen Side) (sin (/ (- pi Ang) 2))))}))
@@ -272,16 +275,16 @@
 			    ;; (list EZ_EVENT_HANDLER Cevent)
 			    )))
 
-	  Ray RaySlope
+	  Ray RaySlope (G 1000)
 	  (ILS (cat .5 S MidPt))
 	  (Sx (Xc S)) (Sy (Yc S)) TSy
 	  (Fcount 0)
 	  (RPrism '(lambda (I) 
-		     (ShowV (I #WN))
+		     ;; (ShowV (I #WN))
 		     (a RaySlope (/ (* pi I) G)
 			Ray (mkRayLS (RotP ILS MidPt RaySlope)))
 		     (TPrism Frame Objs Ray)
-		     (getc)
+		     (wait T)
 		     (incr Fcount)
 		     ;(gsave NCanvas (fmt "TripleA_" Fcount:-4 ".ppm" ))
 		  )))
@@ -293,12 +296,10 @@
 	 ;; set up for 2-D
 	 (gdisable EZ_DEPTH_TEST  EZ_LIGHTING EZ_CULL_FACE )
 	 (proj  nil)
-	 (a G 1000)
-;	 (FOR I 350 DOWNTO -28 (RPrism I))
-;	 (a G 1000)
-;	 (FOR I -28 15 (RPrism I))
-	 (FOR I 15 DOWNTO 0 (RPrism I))
-;;	 (RPrism I0)
+	 (FOR I 100 DOWNTO (- I0 10) (RPrism I))
+	 (FOR I (- I0 10) (+ I0 10) (RPrism I))
+	 (FOR I (+ I0 10) DOWNTO I0 (RPrism I))
+;	 (RPrism I0)
 	 ))
 
 (defun TPrism (Frame Objs Ray)
@@ -318,7 +319,7 @@
     (FOR I 0 16
 	 (a Ray (mkRay S (% (/ (* I 2) 16))))
 	 (a L (findSides Ray Poly S))
-	 (print (list 'Ang (DEG (RSlope Ray))))
+	 (print (list 'Ang (deg (RSlope Ray))))
 	 (print L)
 	 (cond ((onep (len L))
 		(gclear)
@@ -328,23 +329,23 @@
   (let ((Ray (mkRay S 0)) (N 720))
     (gclear)
     (FOR I 0 N
-	 (se `(a TT (Adj (RAD ,I))) Ray)
-	 ;(print (DEG (RSlope Ray)))
+	 (se `(setSlope (rad ,I)) Ray)
+	 ;;(print (deg (RSlope Ray)))
 	 (PLLS (RProj Ray (/ (* 5 I) 360))))))
 
 (defun TAngc (Aperture)
   (let (A B C Cnt S (Blip '(lambda () (incr Cnt) (push (list A B C) 'S))))
     (FOR I 0 360
-	 (a A (Adj (RAD I)) B (Adj (RAD(+ I Aperture))))
+	 (a A (Adj (rad I)) B (Adj (rad(+ I Aperture))))
 	 (a Cnt 0 S nil)
 	 (FOR J 0 359
-	      (a C (Adj (RAD J)))
+	      (a C (Adj (rad J)))
 	      (if (AngBtwxt A B C) (Blip)))
 	 (when (ne Cnt (+ Aperture 1))
-	   (ShowV DEG (A B C))
+	   (ShowV deg (A B C))
 	   (ShowV (Cnt))
 	   (getc)
-	   (while S (print (mapcar DEG (pop 'S))))))))
+	   (while S (print (mapcar deg (pop 'S))))))))
      
 ;; Fiat Lux
 (a #WN [-10 10 -10 10])
