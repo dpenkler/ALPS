@@ -22,6 +22,7 @@
 #define MACOS     9
 #define OANDROID 10
 #define ANDROID64 11
+#define S390X     12
 /* ascii strings for HOST defined in hosts[] in alps.c */
 
 #ifndef HOST
@@ -32,7 +33,7 @@
     (HOST==OANDROID)
 #define ALIGN              4
 #define PROC              32    /* number of bits in an int or pointer  */
-#elif (HOST==LINUX64) || (HOST==SOLARIS64) || (HOST==MACOS) || (HOST==CYGWIN64) || (HOST==ANDROID64)
+#elif (HOST==LINUX64) || (HOST==SOLARIS64) || (HOST==MACOS) || (HOST==CYGWIN64) || (HOST==ANDROID64) || (HOST==S390X)
 #define ALIGN              8    /* memory alignment boundary in octets  */
 #define PROC              64    /* number of bits in an int or pointer  */
 #elif (HOST==SOLARIS32)
@@ -42,6 +43,11 @@
 #if (HOST==MACOS)
 #define MAP_ANONYMOUS MAP_ANON
 #define NO_RT
+#endif
+#if (HOST==SOLARIS32) || (HOST==SOLARIS64) || (HOST==S390X)
+#define ALPS_BIG_ENDIAN
+#else
+#undef ALPS_BIG_ENDIAN
 #endif
 #ifndef INT_MAX
 #define INT_MAX 0x7ffffff

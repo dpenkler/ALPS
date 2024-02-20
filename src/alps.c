@@ -1,5 +1,5 @@
 /*                           VERSION  -8.34-                                */
-#define REV          "Time-stamp: <2024-02-03 10:51:38 dave>"
+#define REV          "Time-stamp: <2024-02-20 09:17:32 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -1371,7 +1371,8 @@ static const char *bufstatstr[] = { /* buffer status printables */
 
 static const char *hosts[] = 
   {"Unknown","Android","Cygwin","Cygwin","Linux","Linux",
-   "Solaris","Solaris","webOS" ,"MacOS", "OldAndroid" };
+   "Solaris","Solaris","webOS" ,"MacOS", "OldAndroid", "Android",
+   "Linux S/390" };
 
 /* ********** GLOBAL VARIABLE SECTION ********** */
 
@@ -7798,15 +7799,16 @@ static  integer ls, rs, li, ri;
 
 /* APL support functions */
 
-vtype getResType(lispTypes op, pointer lent, pointer rent, vtype restyp, integer *needrcpx) {
+vtype getResType(lispTypes op, pointer lent, pointer rent, vtype restyp,
+		 bool crossp, integer *needrcpx) {
     number temp;
+    *needrcpx = false;
     if ((op >= s_andd  && op <= s_nord)  ||
 	(op >= s_great && op <= s_neapl) || (op==s_dist)) return num;
 #if (COMPLEX)
     pointer lex,rex;
     number fc;
     int i, j, ji, atanflag = false;
-    *needrcpx = false;
     restyp =  ((type(lent)==cpx) || (type(rent)==cpx)) ? cpx : num;
     if (op == s_trig) { /* handle special trig cases */
       if (!isNum(lent))  error(inv_funarg,"Trig function code not numeric");
@@ -7826,30 +7828,44 @@ vtype getResType(lispTypes op, pointer lent, pointer rent, vtype restyp, integer
       } else if (isCpx(rent)) { /* check for possible num restyp */
 	for (i=0;i<nels(lent);i++) {
 	    fc = vadd(lent).np[i];
-	    if (fc >12 || fc <-12) error(inv_funarg,"Invalid function code");
-	    if (fc <9)  break;
+	    if (fc > 12 || fc < -12) error(inv_funarg,"Invalid function code");
+	    if (fc < 9)  break;
 	  }
 	if (i==nels(lent))  restyp = num; 
       } else error(pgmr_inc,"Unexpected data type in trig");
     } else if ((op==s_power) || (op==s_log)) {
       if (restyp==num) {
+	lex = vadd(lent); 
+	rex = vadd(rent);
+	if (crossp) { /* special needs for outerproduct */
+	  for (i=0;i<nels(lent);i++) 
+	    for (j=0;j<nels(rent);j++) {
+	      if ((op==s_power && ((lex.np[i] < 0) &&
+				   (modf(rex.np[j], &temp) != 0))) ||
+		  (op==s_log   && ((lex.np[i] < 0) || (rex.np[j] < 0)))) {
+		restyp = cpx; 
+		break;
+	      }
+	    }
+	} else {
 	  j  = 0;
 	  ji = (nels(rent) > 1) ? 1 : 0;
-	  lex = vadd(lent); 
-	  rex = vadd(rent); 
 	  for (i=0;i<nels(lent);i++) {
-	    if ((op==s_power && ((lex.np[i] < 0) && (modf(rex.np[j],&temp) != 0))) ||
-		(op==s_log   && ((lex.np[i] < 0) || (rex.np[i] < 0)))) {
+	    if ((op==s_power && ((lex.np[i] < 0) &&
+				 (modf(rex.np[j],&temp) != 0))) ||
+		(op==s_log   && ((lex.np[i] < 0) || (rex.np[j] < 0)))) {
 	      restyp = cpx; 
 	      break; 
 	    }
 	    j += ji;
+	    if (j >= nels(rent)) break;
 	  }
+	}
       }
     }
 #endif
     return restyp;
-  }
+}
 
 #if (COMPLEX)
 static void cpxAdjust(lispTypes op, pointer *lent, pointer * rent, 
@@ -8169,6 +8185,7 @@ static void vexec(lispTypes op, vtype atp,
 		  integer noels) {
   pointer res = vadd(mres);
   integer i, ifun;
+  number  tmp;
   
   switch (op) {
 
@@ -8258,7 +8275,11 @@ static void vexec(lispTypes op, vtype atp,
 	} else	if (rex.cp[*rs]==0.0) {
 	  res.cp[*as] = 1.0;
 	} else {
-	  res.cp[*as] = cpow(lex.cp[*ls],rex.cp[*rs]);
+	  if ((cimag(lex.cp[*ls]) == 0.0) && (cimag(rex.cp[*rs]) == 0.0) &&
+	      modf(creal(rex.cp[*rs]),&tmp) == 0.0)
+	    res.cp[*as] = pow(creal(lex.cp[*ls]),creal(rex.cp[*rs]));
+	  else
+	    res.cp[*as] = cpow(lex.cp[*ls],rex.cp[*rs]);
 	}
 	*ls += li;     *rs += ri;     *as += ai;
       }
@@ -8790,7 +8811,7 @@ static pointer execute(lispTypes op, integer nargs, pointer parms)    {
     }
     if (isNumop(op) && !isaNum(gong)) error(inv_funarg,"exec");
     if (!conformable)  error(dom_range,"exec"); /*not conformable*/
-    restyp = getResType(op,lent,rent,type(gong),&needrcpx);
+    restyp = getResType(op,lent,rent,false,type(gong),&needrcpx);
     protect(lent);
     if (isNil(result) || type(result) != restyp|| !(rankeq && dimseq)) {
       result = allocv(restyp, dims(gong), pvard(gong));
@@ -10193,7 +10214,7 @@ static pointer innerp(integer nargs, pointer parms) {
   rent = arg4(parms);
   rdim = dims(rent);
   if (!ck2Arg(op2, lent, rent)) error(inv_funarg,"Incompatible argument types");
-  restyp = getResType(op2,lent,rent,type(rent),&rc);
+  restyp = getResType(op2,lent,rent,false,type(rent),&rc);
   if (ldim==0) { i=0;  k=1;                      li=0; }
   else         { i=1;  k=getDim(lent,ldim - 1);  li=1; }
   if (rdim==0) { j=0;  l= 1;	           ri=0; }
@@ -10249,23 +10270,38 @@ static pointer innerp(integer nargs, pointer parms) {
 static pointer outerp(integer nargs, pointer parms) {
       /* (o)uter product by (operation) OF (ARR1) AND (ARR2) */
       /*  op                  sub_op        lent       rent  */
-  pointer lent,rent,res,result,lp,rp;
+  pointer lent,rent,res,result,lex,rex,lp,rp;
   lispTypes sub_op;
-  integer i,ldim,rdim,lnd,as,lim,rc;
+  integer i,ldim,rdim,lnd,as,lim,rim,rc;
   vtype restyp;
   sub_op = arg1(parms).at->spl;
   lent   = arg2(parms);
   rent   = arg3(parms);
   if (!ck2Arg(sub_op, lent, rent))
     error(inv_funarg,"Incompatible argument types");
-  restyp = getResType(sub_op,lent,rent,type(rent),&rc);
-#if (COMPLEX)
-  if (restyp==cpx || rc) {
-    cpxAdjust(sub_op,&lent,&rent,NULL);
-  }
-#endif 
+  restyp = getResType(sub_op,lent,rent,true,type(rent),&rc);
   ldim   = dims(lent);
   rdim   = dims(rent);
+  lim    = nels(lent);
+  rim    = nels(rent);
+#if (COMPLEX)
+  if (restyp==cpx || rc) {
+    if (isNum(lent)) {
+      lex = allocv(cpx,ldim,pvard(lent));
+      rp  = vadd(lent);
+      lp  = vadd(lex);
+      for (i=0;i<lim;i++) lp.cp[i] = rp.np[i];
+      lent = lex;
+    }
+    if (isNum(rent)) {
+      rex = allocv(cpx,rdim,pvard(rent));
+      rp  = vadd(rent);
+      lp  = vadd(rex);
+      for (i=0;i<rim;i++) lp.cp[i] = rp.np[i];
+      rent = rex;
+    }
+  }
+#endif
   lnd    = ldim + rdim;
   makeBlock(lnd, &r.s.lds);
   for (i = 0; i < ldim; i++) r.s.lds.ip[i]        = getDim(lent,i);
@@ -10274,16 +10310,15 @@ static pointer outerp(integer nargs, pointer parms) {
   lp  = vadd(lent);
   rp  = vadd(rent);
   as  = 0;
-  lim = nels(lent);
   for (i = 0; i < lim; i++) {
     rs = 0;
     ls = i;
     vexec(sub_op, type(rent), lp, rp, result, &ls, &rs, &as, 0, 1,
-	  1, nels(rent));
+	  1, rim);
   }
   unprotall(); 
   return(result); // sendres
-}  /*outp*/
+}  /*outerp*/
 
 /* indexing functions */
 
@@ -15861,7 +15896,6 @@ static void alpsInit(int argc, char *argv[]) {
 
   myname = argv[0];
 
-  
   if (!mTty)   mTty   = in_file;
   if (!mHist)  mHist  = hist_file;
   if (!mLoadF) mLoadF = load_file;

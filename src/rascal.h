@@ -6,7 +6,7 @@
 union ieee754_double
   {
     double d;
- #ifdef SPARC
+ #ifdef ALPS_BIG_ENDIAN
     struct   /* This is the IEEE 754 big endian double-precision format.  */
     {
       uint negative:1;
@@ -40,7 +40,7 @@ typedef struct bignum {
 
 typedef union ului {
     unsigned long long ul; 
-#ifdef SPARC 
+#ifdef ALPS_BIG_ENDIAN
   struct {
     uint hi;
     uint lo;
