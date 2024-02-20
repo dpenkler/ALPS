@@ -83,7 +83,7 @@ $ make [GRAF=1] [SOUND=1] [etc]
 ```
 5) Put the alps directory in your execution path or link the
 alps executable into a directory in your current execution path.
-6) Copy the file lisp/doalps to the alps directory as .alps and modify
+6) Copy the file lisp/dotalps to the alps directory as .alps and modify
 it to your needs. .alps is read by alps at startup
 
 ## Running alps
