@@ -293,6 +293,9 @@
        (let* ((#IO 0) (C (exp 2 N)) (IC (i C)))
 	 (* (/ (sqrt C)) (exp (exp (/ (% 0j2) C)) (| C (o '* IC IC))))))
 
+
+;; (onep (r '^ (r '^ (> #CT (|(- (QC '(QFT3)) (DQFT 3))))))) ;=> t
+
 (defun PDQFT (N P)  "Generate explicit QFT matrix with phase error P%"
        (let* ((#IO 0) (C (exp 2 N)) (IC (i C)))
 	 (* (/ (sqrt C)) (exp (Perturb (p {C C} (exp (/ (% 0j2) C))) P)
@@ -300,7 +303,7 @@
 
 (defun TQFT (N) (if (eql (| (QFT N)) (| (DQFT N))) 'OK 'Fail))
 
-;; (eql (| (G (list (DQFT 3)) |110>)) (| (vtr (*  (/ (sqrt 8)) (w (rav |110>))))))
+;; (eql (| (QC `(G (list (DQFT 3)) |110>))) (| (vtr (*  (/ (sqrt 8)) (w (rav |110>))))))
 
 (defun PM (N P)  "Generate matrix of dim NxN with pertubations within +-P%"
        (let ((#IO 0))
@@ -374,8 +377,8 @@
 	 (when (eql (modexp 2 I N) R2) ;; collect terms corresponding to measured R2
 	   (a NR (+ NR 1) R1 (+ R1 (vtr (MKV T I)))))) ;; From (21) and (22) of [2]
     (a R1 (/ R1 (sqrt NR)))              ;; normalise
-    (a R1 (G (list (conj (DQFT T))) R1)) ;; apply inverse fft to top T bits aka R1
-    (a RR (rav (meas R1)))               ;; measure R1
+    (a R1 (QC `(G (list ,(conj (DQFT T))) ,R1))) ;; apply inverse fft to top T bits aka R1
+    (a RR (rav (QC `(meas ,R1))))                ;; measure R1
     (plot RR)
     (a MX (r 'c (dp 1 RR))) ;; find max peak excluding at 0
     (a P (dp 1 (k (> RR (/ MX 2)) (i T2))))  ;; peaks at P dropping first peak

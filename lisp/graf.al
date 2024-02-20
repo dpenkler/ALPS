@@ -1258,6 +1258,7 @@
   ;; (TCfn '! 3.5 .1 .5) gamma function
   ;; (TCfn carg 3.5 .05 .5) (carg defined in prims.al)
   ;; (TCfn '(lambda (X) (/ (sin (| X)) (| X))) 12 .2 12) circular wave
+  ;; (TCfn mandc 3.5 .1 2) mandelbrot set (needs mandel.al)
   (let* ((#IO 1)
 	 (N (* 2 I))
 	 (R (i {0 S N}))

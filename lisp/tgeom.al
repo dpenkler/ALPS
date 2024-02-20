@@ -296,6 +296,8 @@
 	 ;; set up for 2-D
 	 (gdisable EZ_DEPTH_TEST  EZ_LIGHTING EZ_CULL_FACE )
 	 (proj  nil)
+	 (RPrism 100)
+	 (getc)
 	 (FOR I 100 DOWNTO (- I0 10) (RPrism I))
 	 (FOR I (- I0 10) (+ I0 10) (RPrism I))
 	 (FOR I (+ I0 10) DOWNTO I0 (RPrism I))
@@ -351,3 +353,5 @@
 (a #WN [-10 10 -10 10])
 ;;(Ginit2D)
 
+(defun TGEOM (T) "Test newton with delay T seconds"
+  (TNewt 45 [-9.9 1.5] [-6.5 4.5] 13 T 11.42 -48))

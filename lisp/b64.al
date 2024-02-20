@@ -9,7 +9,7 @@
 	   (L (dec 256 (tr T)))  ;; decode each 3 bytes into a 24bit value
 	   (E (enc (p 4 64) L))  ;; encode each 24 bit into 4 six bit values 
 	   (F (aref eb64_ET (rav (tr E))))) ;; convert to b64 encoded chars
-      (aset F (p Pad "=") (- (i Pad))) F)) ;; padding
+      (aset F (p Pad "=") (- (+ 1 (i Pad)))) F)) ;; padding
       
 (de db64 (R) "Decode b64 encoded character vector R to binary character vector"
     (let* ((#IO 0) (N (c (/ (p R) 4))) (S (ind eb64_ET R)) (T (p {N 4} S))
@@ -21,7 +21,7 @@
 (de tb64 (N)
     (let ((#IO 0))
       (FOR I 1 N
-	   (a T (chr (? (p (? 256) 256))))
-	   (if (neql T (db64 (eb64 T)))
-	       (error (fmt "Failed at" I:6 (p [] (p T)):5 (num T)))))))
+	   (a T (chr (? (p (? 256) 256))) E (eb64 T) R (db64 E))
+	   (when (neql T R)
+	     (error (fmt "Failed at" I:6 (p [] (p T)):5 ))))))
     

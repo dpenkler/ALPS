@@ -1,5 +1,5 @@
 ; -*- mode: emacs-lisp; -*-
-(require 'idioms) ; for PRIMES
+(require 'idioms) ; for PRIMES and BARGRAPH
 ;; lisp and apl style functions for generating primes and factorising
 ;; into prime factors
 
@@ -114,4 +114,10 @@
 	      (M (r 'c D))) ;; greatest difference
 	 (r '+ (o '= (i M) D))))
 
-;; (FOR I 1 100 (prat 1 1 (chr [27 91 74])) (princ (BarGraph (l (+ 1 (PDist (* I 1000)))))) (wait .1))
+(defun ShowPD () "Show distribution log growth for distances between 100000 successive primes by 1000"
+  (prat 1 1(chr [27 91 74]))
+  (FOR I 1 100
+       (let ((T  (BarGraph (l (+ 1 (PDist (* I 1000)))))))
+	 (prat (- 20 (tally T)) 1 (chr [27 74]))
+	 (princ T)
+	 (wait .1))))

@@ -40,7 +40,7 @@
 	    U V (R 0))
 	   (while t
 	     (a V (tk 1 (k (> X M) M)) ; biggest in M smaller tha X
-		U (i M V))   ; U is index of nearest entry in M to X
+		U (ind M V))   ; U is index of nearest entry in M to X
 ;	   (print (fmt "V is "  V " X " X " => " (/ X V)))
 	     (if (zerop V)
 		 (return (+ R (/ (- X 1) P)))) ; add approximation
@@ -60,7 +60,7 @@
 	 (while t
 	   (a V (tk 1 (k (> X L) L)))    ; largest L smaller than X
 	   (if (zerop V) (return R))      
-	   (a R (* R (aref M (i L V))))  ; multiply by 10 to the power of V
+	   (a R (* R (aref M (ind L V))))  ; multiply by 10 to the power of V
 	   (a X (- X V)))))              ; reduce x by V
 
 (defun TB () ; Testing Briggs
@@ -83,7 +83,7 @@
 
 
 (defun ANG (N P) ; generate 2N+1 angles in radians from [-pi..pi]*P
-         (let ((#IO 0)) (* (% P) (/ (- N (i (* 2 N))) N))))
+         (let ((#IO 0)) (* (% P) (/ (- N (i (+ 1 (* 2 N)))) N))))
 
 (defun msin (X) 
   (prog ((T  X) (Y (- (sqr X))) (J 3) (OX 0))
@@ -106,9 +106,10 @@
 (defun TTEXP (M N) (r '+ (+ (sqr (SIN (ANG M 1) N))
 			    (sqr (COS (ANG M 1) N)))))
 
-(defun TTT (M) (prog (R)
+(defun TTT (M) (prog (R) ;; (TTT 360)
+ ;;; find number of terms for convergence on M divisions of the circle
   (FOR I 1 100 
-       (if (eq (* 2 M) (a R (TTEXP M I))) (return 'ok)
+       (if (eq (+ 1 (* 2 M)) (a R (TTEXP M I))) (return 'ok)
 	 (princl (fmt "# terms" I:3 " Conv " (sqr (- R (* 2 M))):12:7))))
   'bork))
 

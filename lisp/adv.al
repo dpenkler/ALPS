@@ -27,6 +27,9 @@
 ;; For the original source please see:
 ;; https://www.gnu.org/software/emacs/casting-spels-emacs/html/casting-spels-emacs-1.html
 
+;; To play (load 'adv) (adv)
+;; To learn about lisp and macros see the URL above from which you can
+;; copy and paste the commands into the alps prompt
 
 (require 'cl)
 
@@ -115,11 +118,51 @@
 
 (game-action splash bucket wizard living-room
   (cond ((not bucket-filled) '(the bucket has nothing in it -))
-        ((have 'frog) '(the wizard awakens and sees that you stole
+        ((have 'frog) (a end t)
+	 '(the wizard awakens and sees that you stole
                         his frog - 
                         he is so upset he banishes you to the 
                         netherworlds - you lose! the end -))
-        (t '(the wizard awakens from his slumber and greets you
+        (t (a end t)
+	   '(the wizard awakens from his slumber and greets you
              warmly - 
              he hands you the magic low-carb donut - you win!
              the end -))))
+
+(defun adv ()
+  (let (end
+	(show '(lambda (X) (princl (subst "\n" '- X))))
+	(help '(lambda ()
+		 (let ((A '("Command character - action"
+			    "h - help"
+			    "l - look"
+			    "w - walk west"
+			    "e - walk east"
+			    "u - walk upstairs"
+			    "d - walk downstairs"
+			    "i - inventory"
+			    "p - pick up"
+			    "S - splash bucket on wizard"
+			    "D - dunk bucket in well"
+			    "W - weld chain on bucket"
+			    "q - end")))
+		   (mapc 'princl A)))))
+    (show (look))
+    (princl "Press h for help")
+    (while (not end)
+      (princl (a C (getc)))
+      (cond ((eq C "h") (help))
+	    ((eq C "l") (show (look)))
+	    ((eq C "w") (show (walk west)))
+	    ((eq C "e") (show (walk east)))
+	    ((eq C "u") (show (walk upstairs)))
+	    ((eq C "d") (show (walk downstairs)))
+	    ((eq C "i") (show (inventory)))
+	    ((eq C "p") (princ "Pick up what ? ")
+	     (show (pickup-object (read))) (rclr))
+	    ((eq C "S") (show (splash bucket wizard)))
+	    ((eq C "D") (show (dunk bucket well)))
+	    ((eq C "W") (show (weld chain bucket)))
+	    ((eq C "q") (a end t) 'Bye)
+	    (t (princl "Huh ?"))))))
+	 
