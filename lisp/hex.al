@@ -49,6 +49,12 @@
     )
 )
 
+(de sv64 (A) "show variable 64 bit"
+ (let* ((#PW 36) (#IO 0) (REV (if (zerop (num (aref (mget (addr nil) 8) 6))) 'rev 'arg)) ;; little/big endian
+       (Z (num (mget (addr A) (- (+ 1 (dec 2 (~(rav(tr(enc (p 8 2)(REV (num (mget (- (addr A) 16) 8))))))))) 24)))))
+   (princl (fmt "Addr 0x" (addr A):-16::16))
+   (FOR I 0 (- (/ (p Z) 8) 1) (prhex (aref Z (+ (* I 8) (i 8)))))))
+
 (setq C "10039000A6CF27A9A50000000000004E45440680")
 (setq D "101EF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
 (setq E "101F0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
@@ -124,7 +130,7 @@
       (incr I))
     (unless (zerop (a R (| N (- I 1))))
       (princl (fmt "* ":(+ 2 (* (- N R) (+ S 1))):1 (PrAsc (- I R 1) R))))
-    (terpri)))
+    ))
 
 (de Tprhex ()
     (let ((#IO 0) (Q (num "Hello this is the end my friend!")))
