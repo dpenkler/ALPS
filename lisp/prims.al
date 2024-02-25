@@ -1,4 +1,4 @@
-;; Time-stamp: <2024-02-07 22:16:41 dave>
+;; Time-stamp: <2024-02-25 12:05:37 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -640,18 +640,18 @@
 		      ("G" "Graphics")
 		      ("I" "Instrument Control")
 		      ("L" "Try/Recover")
+		      ("M" "System timer")
 		      ("N" "Network Support")
 		      ("P" "Preemption")
-		      ("M" "System timer")
 		      ("R" "Range Checking")
 		      ("S" "Sound")
 		      ("T" "Trace Statistics")
 		      ("W" "Workspace Persistence")
 		      ("c" "Deep Binding CVC")
 		      ("d" "Deep Binding")
+		      ("j" "Complex numbers")
 		      ("s" "Shallow Binding")
 		      ("t" "Supress Tail Recursion")
-		      ("j" "Complex numbers")
 		      )))
       (princ (fmt "Capabilities: " #CP "\n"))
       (mapc '(lambda (X) (tab 3) (princ (cadr (assoc X CapAlist))) (terpri)) 
