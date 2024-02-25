@@ -28,7 +28,8 @@ make
 
 The optional graphics capability is based on Maorong Zou's
 [EZWGL](https://github.com/dpenkler/EZWGL) library which must be
-installed before building alps.
+installed before building alps. Before building EZWGL ensure that
+the following dev libraries are installed: x11 xext sm ice png tiff jpeg  
 
 The optional instrument control capability is based on
 [linux-gpib](https://sourceforge.net/projects/linux-gpib/files/latest/download) 
@@ -48,7 +49,7 @@ $ cd ALPS
 ```
 3) Building the executable:
 
-There ar a number of capabilities that can be activated by setting the capability identifier to 1 on the  **make** command line
+There are a number of capabilities that can be activated by setting the capability identifier to 1 on the  **make** command line
 ```
 GRAF    enable graphics integration with EZWGL
 INSTCON enable gpib instrument control
@@ -74,12 +75,12 @@ TAIL    tail recursion removal is turned off
 ```
 To otherwise modify the capabilities requires modifying the #defines in alps.c
 
-By default it builds an executable for a X86-64 linux system HOST=LINUX64
+By default it builds an executable for a 64bit linux system HOST=LINUX64 (x86_64 armv8)
 
-You can specify other targets such as an x86 linux system: HOST=LINUX32 if you have a 32 bit build environment.
+You can specify other targets such as a 32bit linux system: HOST=LINUX32 (X86 armv7) if you have a 32 bit build environment.
 See [alps.h](src/alps.h) for other targets. The Makefile may need to be modified.
 ```
-$ make [GRAF=1] [SOUND=1] [etc]
+$ make [HOST=LINUX32] [GRAF=1] [SOUND=1] [etc]
 ```
 5) Put the alps directory in your execution path or link the
 alps executable into a directory in your current execution path.
