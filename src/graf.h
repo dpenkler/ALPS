@@ -32,3 +32,4 @@ extern pointer gcanvas  (int, pointer);
 extern pointer gsave    (int, pointer);
 extern pointer gload    (int, pointer);
 extern pointer gwar     (int, pointer);
+extern pointer gresize  (int, pointer);

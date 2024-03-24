@@ -1,5 +1,5 @@
-/*                           VERSION  -8.35-                                */
-#define REV          "Time-stamp: <2024-02-25 12:08:55 dave>"
+/*                           VERSION  -8.36-                                */
+#define REV          "Time-stamp: <2024-03-24 20:17:04 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -277,7 +277,7 @@ typedef enum { /* primitive and auxiliary case entries in bigEval */
   s_graf,    s_loc,     s_proj,    s_gmat,    s_light,   s_glmodel,
   s_gsmodel, s_mkwdgt,  s_cfgwdgt, s_dispwdgt,s_hidewdgt,s_wdgtdata,
   s_gsldrval,s_gdialval,s_gfsval,  s_gtxtval, s_gtxtclr, s_gtxtset, 
-  s_gcanvas, s_gsave,   s_gload,   s_gwar,
+  s_gcanvas, s_gsave,   s_gload,   s_gwar,    s_gresize,
   /* Host operating system and file system functions */
   s_sys,     s_getenv,  s_setenv,    s_dl,      s_wd,      s_pu,
   s_rn,      s_st,
@@ -918,6 +918,7 @@ static const struct funent evtab[] = {
   {s_gsave,     "gsave",        subr, 83},
   {s_gload,     "gload",        subr,103},
   {s_gwar,      "gwar",         subr, 82},
+  {s_gresize,   "gresize",      subr,104},
   /* Host System Functions */
   {s_sys, 	"sys",  	subr, 84},
   {s_getenv, 	"getenv",  	subr,  9},
@@ -1202,6 +1203,7 @@ struct fparms ftt[] = {
   /*101 m nscv*/  {1,0,0,{{man,nscv}}},
   /*102 m unk */  {1,0,0,{{man,unk}}},
   /*103 mc on2*/  {1,2,0,{{man,cv},{opt,nsgl},{opt,num}}},
+  /*104 wd ns2*/  {3,0,0,{{man,wgt},{man,nsgl},{man,nsgl}}},
 };
 
 /* apl index of identity elements of primitive dyadic functions */
@@ -1919,7 +1921,9 @@ static void alpsRead(int fd) { /* select callback for files */
   fibrec *fp  = fparr[fd];
   lex         = fp->ibuf;
   ilen        = nels(lex);
+  if (fp->isatty == 2) alpsBlockSignals();
   len         = read(fp->fd,vadd(lex).sp,ilen);
+  if (fp->isatty == 2) alpsUnblockSignals();
   fp->ecci    = len;
   fp->ifpos  += len;    
   fp->ilpos   = 0;
@@ -1951,7 +1955,7 @@ pointer alpsReadLine(fibrec *fp) {
   } else mpos = 0;
   mlen = read(fp->fd,&buf[mpos],ilen-mpos);
   if (mlen <= 0) {
-    if ((mlen == 0) && (fp->isatty)) goto findLine;
+    if ((mlen == 0) && (fp->isatty == 1)) goto findLine;
     fp->bufstat = ldvs_eof;
     if (mpos > 0) {
       fp->ilpos = 1;
@@ -3291,7 +3295,7 @@ static void filMarker(pointer lex) {
   fibrec *fex = getFil(lex);
   if (fex->ibuf.wh) markacc(fex->ibuf);;
   if (fex->obuf.wh) markacc(fex->obuf);
-  if (fex->isatty) { /* terminal handling extras */
+  if (fex->isatty == 1) { /* terminal handling extras */
     // hp and cp point into the history list which is marked thru a.v.hhs
     markacc(fex->ubuf); // undo buffer always allocated 
     markacc(fex->ybuf); // yank buffer aweso
@@ -6155,6 +6159,7 @@ pointer alpsOpenF(pointer parm) { /* open file or socket */
 #if (USBTMC)
     fstat(fd,&sb);  /* Check for usbtmc device */
     if (S_ISCHR(sb.st_mode) && sb.st_rdev == makedev(180,176)) {
+      fex->isatty = 2;  // so we can block signals in alpsRead
       fex->exceptcb = alpsRead;
       alpsOutsln(alpserr,"Info: Found usbtmc device");
     }
@@ -12013,7 +12018,7 @@ stkp +--------------+
     // drop through
     
 #define CHECKBUF \
-    if (inp->ilpos>=inp->ecci) {     \
+    if ((inp->fob.fb->type == filt) && (inp->ilpos>=inp->ecci)) { \
       putbackChar(inp,tchar);	     \
       save(inp->fob);		     \
       disposition = winp;            \
@@ -12028,8 +12033,8 @@ stkp +--------------+
       inp->radix = (int)getNumVal(a.v.hib);
       if (temi == '0') {
 	tchar = getChar(inp);
-	inp->aline[inp->alen++] = '0';
 	CHECKBUF;
+	inp->aline[inp->alen++] = '0';
 	temi = nextChar(inp);
 	if (temi == 'x') {
 	  getChar(inp);
@@ -13150,6 +13155,7 @@ stkp +--------------+
   case s_gsave:     sendRes(gsave(nargs(parm),parm));      goto srend; 
   case s_gload:     sendRes(gload(nargs(parm),parm));      goto srend; 
   case s_gwar:      sendRes(gwar(nargs(parm),parm));       goto srend; 
+  case s_gresize:   sendRes(gresize(nargs(parm),parm));    goto srend; 
   case s_loc:       error(not_imp,"loc");                  goto srend;
 #else
   case s_gclear:   case s_gupdate:  case s_glinit:   case s_gsave:
@@ -13158,7 +13164,8 @@ stkp +--------------+
   case s_mkwdgt:   case s_cfgwdgt:  case s_dispwdgt: case s_hidewdgt: 
   case s_gsldrval: case s_gdialval: case s_gfsval:   case s_gtxtval: 
   case s_gtxtclr:  case s_gtxtset:  case s_gcanvas:  case s_wdgtdata:
-  case s_loc:   
+  case s_gupdate:  case s_gsave:    case s_gload:    case s_gwar:  
+  case s_gresize:  case s_loc:   
     error(not_imp,"GRAF");
 #endif
 #if (SOUND)
