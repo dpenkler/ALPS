@@ -1,4 +1,5 @@
 ;;;-*- mode: emacs-lisp -*-
+(require 'idioms)
 
 (defun ReadPPM (N) ;; Read ppm file with name N
   "Returns an WxHx3 array where the last dimension contains the R G B values"
@@ -26,6 +27,28 @@
     (princ (fmt W:5 H:5 "\n255\n") F)
     (putb (rav (chr A)) F)
     (close F)))
+
+(defun RepColour (C1 C2 A)  "Replace colour C1 0xRRGGBB with C2 in image A"
+       (tr (enc (p 3 256) (RepElem '(lambda (V) (= C1 V)) C2 (dec 256 (tr A))))))
+
+(defun ShowPPM (F) "Show PPM file in graphics window"
+       (let (ppmCanvas (S (rev (tk 2 (p (ReadPPM F))))))
+	 (require 'graf)
+	 ;; Note since ppmCanvas is a local variable the window will disappear
+	 ;; when the gc runs
+	 (a ppmCanvas (mkwdgt EZ_WIDGET_3D_CANVAS nil
+			      (list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
+				    (list  EZ_SIZE (+ S 2))
+				    (list  EZ_BACKING_STORE 1))))
+	 (gcanvas ppmCanvas)
+	 (dispwdgt ppmCanvas)
+	 (glinit)
+	 (gdisable EZ_DEPTH_TEST EZ_LIGHTING EZ_CULL_FACE )
+	 (proj nil)
+;;	 (gclear)
+	 (gwar ppmCanvas)
+	 (gload F)
+	 ))
 
 (defun Patch3 (R C A)
   (let* ((SD (cat R C))         ;; dimensions of the submatrix
