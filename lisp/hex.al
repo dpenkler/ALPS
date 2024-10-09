@@ -29,7 +29,7 @@
 (defun peek (A L) ; peek at starting at address A for L octets
   (p {L 8} (tr (S2Hex (mget (addr A) L))))) ; byte for byte
 
-(defun sv (A) ; word for word
+(defun svwfw (A) ; word for word
   (if (not(atom A)) (error "sv argument not atomic"))
   (let* ((RA (- (addr A) 8)) ; step back to bsiz field of alc'd block
 	 (RL  (peep RA))     ; get length
@@ -49,11 +49,12 @@
     )
 )
 
-(de sv64 (A) "show variable 64 bit"
- (let* ((#PW 36) (#IO 0) (REV (if (zerop (num (aref (mget (addr nil) 8) 6))) 'rev 'arg)) ;; little/big endian
-       (Z (num (mget (addr A) (- (+ 1 (dec 2 (~(rav(tr(enc (p 8 2)(REV (num (mget (- (addr A) 16) 8))))))))) 24)))))
-   (princl (fmt "Addr 0x" (addr A):-16::16))
-   (FOR I 0 (- (/ (p Z) 8) 1) (prhex (aref Z (+ (* I 8) (i 8)))))))
+(de sv (A) "show variable 32 or 64 bit"
+    (let* ((#PW 36) (#IO 0) (WS (if (gt (addr nil) (exp 2 32)) 8 4)) ; word size
+	   (REV (if (zerop (num (aref (mget (addr nil) WS) (-  WS 2)))) 'rev 'arg)) ;; little/big endian for length word
+	   (Len  (- (+ 1 (dec 2 (~(rav(tr(enc (p 8 2)(REV (num (mget (- (addr A) (* WS 2)) WS))))))))) (* WS 3)))) ;; twos complement big endian
+   (princl (fmt "Addr 0x" (addr A):-16::16 " len " Len))
+   (prhex  (num (mget (addr A) Len)))))
 
 (setq C "10039000A6CF27A9A50000000000004E45440680")
 (setq D "101EF000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
