@@ -55,7 +55,7 @@ pointer alpsOpenInst(pointer parm) {
     id = ibdev(minor,pad,0,14,1,0);
     devname = itos(addr);
     name = mkChr(devname,strlen((char *)devname));
-    alpsOutsn(alpserr,5,"oio opening minor ",itos(minor),"  Pad ",itos(pad),"\n");
+    //    alpsOutsn(alpserr,5,"oio opening minor ",itos(minor),"  Pad ",itos(pad),"\n");
   }
 
   if (id >= 0) { /* ibfind/ibdev will shout but we check anyway */
