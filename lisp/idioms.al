@@ -1300,6 +1300,9 @@
 (defun RemElem (S C V) (k (~ (C S V)) S))
 ;; (RemElem [1 2 0 3 0 1 3] '= 0) ;=> [1 2 3 1 3]
 
+;; 2.1 Remove elements of V from vector S
+(defun Exclude  (V S) (k (r '^ 1 (o '<> V S)) S))
+
 ;; 3. Convert a set of positive integers into a mask i.e. turn on bits
 (defun Mask (V) (elt (i (r 'c V)) V ))
 ;; (Mask [1 5 9]) ;=> [1 0 0 0 1 0 0 0 1]
