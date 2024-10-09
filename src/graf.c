@@ -101,6 +101,7 @@ static bool alps_light = false;
 
 pointer gclear() {
   if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  EZ_DrawBuffer(isNil(lookup(a.v.hgb))? EZ_FRONT : EZ_BACK);
   EZ_Clear(EZ_COLOR_BUFFER_BIT | EZ_DEPTH_BUFFER_BIT);
   return(ptru);
 }
@@ -431,6 +432,42 @@ pointer plot(integer narg, pointer p) {
 	      }
 	      EZ_End();
 	    }
+	    continue; /* for objects in list */
+	  }
+	}
+	 if (mode==EZ_QUADS) {
+	  if (dimd != 3) error(dom_range,"QUADS mode needs rank 3 arg");
+	  int uind,vind;
+	  int ncols = getDim(lex,2);
+	  int nrows = getDim(lex,1);
+	  float z1,z2,z3,z4;
+	  float zllim = -2.0;
+	  float zhlim = 2.0;
+  	  number *mesh = vadd(lex).np;
+	  if (alps_light && (getDim(lex,0) == 3 || getDim(lex,0) == 4)) {
+	    EZ_Begin(mode);
+	    EZ_Color3fv((float *)colarr[pen]);
+	    for (i=0;i<nrows-1;i++) {
+	      uind = i*ncols;
+	      vind = (i+1)*ncols;
+	      for (j=1;j<ncols-1;j++) {
+		z1 = mesh[uind + rep2];
+		z2 = mesh[vind + rep2];
+		z3 = mesh[vind + 1 + rep2];
+		z4 = mesh[uind + 1 + rep2];
+		if (z1 < zhlim && z2 < zhlim && z3 < zhlim && z4 < zhlim &&
+		    z1 > zllim && z2 > zllim && z3 > zllim && z4 > zllim) {
+		  cnorm(mesh,rep,uind,uind+1,vind,vind+1);
+		  alpv(mesh[uind],mesh[uind + rep],z1);
+		  alpv(mesh[vind],mesh[vind + rep],z2);
+		  alpv(mesh[vind + 1],mesh[vind + 1 + rep],z3);
+		  alpv(mesh[uind + 1],mesh[uind + 1 + rep],z4);
+		}
+		uind++;
+		vind++;
+	      }
+	    }
+	    EZ_End();
 	    continue; /* for objects in list */
 	  }
 	}
@@ -1065,6 +1102,7 @@ pointer gload(integer n, pointer parms) {
     if (fw > vw) fw = vw; // clip to viewport size
     if (fh > vh) fh = vh;
   }
+  alpsOutsn(alpserr,9,"gload ix ",itos(ix)," iy ",itos(iy)," fw ",itos(fw)," fh ",itos(fh),"\n");
   glimage = EZ_CreateGLImage(pixmap);
   EZ_FreeLabelPixmap(pixmap);
   EZ_PutGLImageScreen(glimage, ix, iy, fw, fh, -1.0, 1.0, 0.0); // upper left
@@ -1088,6 +1126,7 @@ pointer gwar(integer n, pointer p) { /* get widget aspect ration */
   if (n != 1) error(inv_numarg,"gwar expects only a widget as argument");
   EZ_Widget *wdgt = getWidget(arg1(p));
   EZ_GetWidgetDimension(wdgt, &w, &h);
+  alpsOutsn(alpserr,5,"gwar w ",itos(w)," h ",itos(h),"\n");
   lex = mkNum((number)w/(number) h);
   return(lex);
 }
