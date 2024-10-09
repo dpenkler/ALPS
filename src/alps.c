@@ -1,5 +1,5 @@
 /*                           VERSION  -8.36-                                */
-#define REV          "Time-stamp: <2024-03-24 20:17:04 dave>"
+#define REV          "Time-stamp: <2024-04-26 10:07:08 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -13164,8 +13164,7 @@ stkp +--------------+
   case s_mkwdgt:   case s_cfgwdgt:  case s_dispwdgt: case s_hidewdgt: 
   case s_gsldrval: case s_gdialval: case s_gfsval:   case s_gtxtval: 
   case s_gtxtclr:  case s_gtxtset:  case s_gcanvas:  case s_wdgtdata:
-  case s_gupdate:  case s_gsave:    case s_gload:    case s_gwar:  
-  case s_gresize:  case s_loc:   
+  case s_gload:    case s_gwar:     case s_gresize:  case s_loc:   
     error(not_imp,"GRAF");
 #endif
 #if (SOUND)
