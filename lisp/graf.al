@@ -722,7 +722,7 @@
   (gclear)
   )
    
-(defun FRAME () (graf(p [2 5] (aref #WN [1 2 2 1 1 3 3 4 4 3]))))
+(defun FRAME () (graf(p [2 5] (aref #WN (+ [0 1 1 0 0 2 2 3 3 2] #IO)))))
 (defun DIAG  () (graf (aref #WN [3 4])) (graf (aref #WN [4 3])))
 (defun AXES  () 
   (graf (p [2 2] (cat (tk 2 #WN) [0 0])))
@@ -1230,7 +1230,7 @@
 				  (aref (nth (+ I 1) X) K(cat (+ J 1) J)))))
 ;	      (wait 1)
 	      ))))
-(defun TL () 
+(defun TL (X Y) 
   (let ((G (mkmesh (% (i [-.5 .1 .5])) (% (i [0 0.25 2])) 5)))
     (gclear)
     (genable EZ_CULL_FACE EZ_DEPTH_TEST EZ_LIGHTING EZ_LIGHT0)
@@ -1246,7 +1246,7 @@
     (light EZ_LIGHT0 EZ_POSITION [0 0 10 0])
     (gmat EZ_FRONT EZ_DIFFUSE [0.8 0.8 0 1])
     (gmat EZ_BACK  EZ_DIFFUSE [0 0.8 0.8 1])
-    (Gplay (list (PS 6 4)
+    (Gplay (list (PS X Y)
 					; (mm (mktransmat [0 0 0]) G)
 		 ))
     ))
@@ -1255,27 +1255,28 @@
   ;; Test complex function F on square  interval (re [-I I]) x (im [-I I])
   ;; S is the step length in the interval and Scale scales the result of
   ;; applying F over the interval.
-  ;; (TCfn '! 3.5 .1 .5) gamma function
-  ;; (TCfn carg 3.5 .05 .5) (carg defined in prims.al)
-  ;; (TCfn '(lambda (X) (/ (sin (| X)) (| X))) 12 .2 12) circular wave
-  ;; (TCfn mandc 3.5 .1 2) mandelbrot set (needs mandel.al)
+  ;; (TCfn '! 3.5 .1 .5) ;; gamma function
+  ;; (TCfn carg 3.5 .05 .5) ;; (carg defined in prims.al)
+  ;; (TCfn '(lambda (X) (/ (sin (| X)) (| X))) 12 .2 12) ;; circular wave
+  ;; (TCfn mandc 3.5 .1 2) ;; mandelbrot set (needs mandel.al)
+  ;; (TCfn '(lambda (X) (>= 1 (dist (re X) (im X)))) 2 .05 1) ;; cylinder
   (let* ((#IO 1)
 	 (N (* 2 I))
 	 (R (i {0 S N}))
 	 (SS (p 2 (p R))) ;; dimensions of the square in number of points
 	 (M (p SS (- R I))) ;; centre the interval on 0
 	 (K (+  M (* 0j1 (tr M)))) ;; complex interval
-	 (Res (F K))
-	 (Obj (p {4 SS} 1))
+	 (Res (F K))               ;; apply function to complex interval
+	 (Obj (p {4 SS} 1))        ;; target object
 	 (#PM EZ_LINES)
-	 (#DM EZ_QUAD_STRIP)
+	 (#DM EZ_QUADS)
 	 (#OP {0 0 (* 2 N)}) 
 	 (#OF {0 0 (- N)})
-	 (#NF {N (- N)})
-	 (#WN {(- I) I (- I) I}))
+	 (#NF {N (- N)}) 
+	 (#WN {(- I) I (- I) I})
+	 (ZL I)) ;; Z clip limit
     (aset Obj (o '% [9 11] K) [2 1] () ()) ;; split real and im to planes 2 & 1
-    (aset Obj (f I (c (- I) (* Scale (re Res)))) 3 () ())
-;   (aset Obj (<= 1 (dist (aref Obj 1 () ()) (aref Obj 2 () ()))) 3 () ())
+    (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
     (gcanvas Canvas)
     (dispwdgt Canvas)
     (glinit)
