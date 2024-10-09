@@ -653,7 +653,7 @@ void alpsTermReader(int fd) {
   fibrec *fb = fparr[fd];
   uchar *lbuf = vadd(fb->ibuf).sp;
   uchar c,ibuf[max_line_len],mbuf[max_line_len];
-  if (fb->isatty == 0) error(pgmr_inc,"Term reader invoked on non tty");
+  if (fb->isatty != 1) error(pgmr_inc,"Term reader invoked on non tty");
   iblen  = read(fd,ibuf,1);
   if (iblen < 0) {
     alpsMsg(3,"Reader error",strerror(errno),"\n");
@@ -964,7 +964,7 @@ void alpsTermReader(int fd) {
 }
 
 void alpsCloseTerm() {
-  if (alpsin->isatty != 0)  tcsetattr(0,TCSADRAIN,&alpsin->ios);
+  if (alpsin->isatty == 1)  tcsetattr(0,TCSADRAIN,&alpsin->ios);
 }
 
 /********* Prompt stuff ****************/
@@ -1111,7 +1111,7 @@ void alpsInitTerm(fibrec *term, int no_alloc) {
   if (term->twidth <= 0) term->twidth=80;
   setNumval(a.v.hcw,term->twidth);  // Achtung: Patching workspaceInit values
   setNumval(a.v.hch,term->theight);
-  term->isatty  = true;
+  term->isatty  = 1;
   term->escMode = EM_NORMAL;   
   term->ttyMode = 0;   
   term->ipos    = 0;   
