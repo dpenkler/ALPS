@@ -1,5 +1,5 @@
 /*                           VERSION  -8.36-                                */
-#define REV          "Time-stamp: <2024-04-26 10:07:08 dave>"
+#define REV          "Time-stamp: <2024-10-08 18:19:32 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -4999,17 +4999,21 @@ static pointer pairlis(integer nargs, pointer parm) {
   if (!isNil(args)) {
     lex = mkassoc(symbols.rg->ar, args.rg->ar, pnil);
     args = args.rg->dr;
+    if (!isList(args)) error(inv_funarg,"Bad args list");
   } else    lex = mkassoc(symbols.rg->ar, pnil, pnil);
   protect(lex);
   symbols = symbols.rg->dr;
+  if (!isList(symbols))  error(inv_funarg,"Bad symbols list");
   res = lex;
   while (!isNil(symbols)) {
     if (!isNil(args)) {
       lex.rg->dr = mkassoc(symbols.rg->ar, args.rg->ar, pnil);
       args       = args.rg->dr;
+      if (!isList(args)) error(inv_funarg,"Bad args list");
     } else lex.rg->dr = mkassoc(symbols.rg->ar, pnil, pnil);
     lex     = lex.rg->dr;
     symbols = symbols.rg->dr;
+    if (!isList(symbols))  error(inv_funarg,"Bad symbols list");
   }
   lex.rg->dr = als;
   unprotect();
