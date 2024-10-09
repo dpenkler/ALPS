@@ -3,7 +3,7 @@
 #CFLAG = -m32 -O2  -march=native -fomit-frame-pointer -std=gnu99
 #CFLAG = -O4 -m32 -march=native -fomit-frame-pointer -std=gnu99
 #CFLAG = -O4 -m64 -march=core2 -fomit-frame-pointer -std=gnu99
-CFFLAG = -O3 -march=native -fomit-frame-pointer -fno-caller-saves -std=gnu99
+#CFFLAG = -O3 -march=native -fomit-frame-pointer -fno-caller-saves -std=gnu99
 #CFLAG =  -mtune=generic -fomit-frame-pointer -std=gnu99
 #CFLAG =  -O4 -m32 -march=atom -fomit-frame-pointer -std=gnu99
 #CFLAG = -O2  -ffloat-store
@@ -11,8 +11,10 @@ CFFLAG = -O3 -march=native -fomit-frame-pointer -fno-caller-saves -std=gnu99
 #CFLAG = -O4 -march=native -fomit-frame-pointer -fprofile-arcs -ftest-coverage -std=gnu99
 ifeq ($(ARM),1)
 CFLAG = -O3 -march=native -mfloat-abi=hard -fomit-frame-pointer -std=gnu99
+else ifeq ($(HOST),LINUX32)
+CFLAG = -O3 -m32 -std=gnu99 -Wall -Wno-maybe-uninitialized -Wno-stringop-truncation -Wno-unused -Wno-misleading-indentation
 else
-CFLAG = -g -O -std=gnu99 -Wall -Wno-maybe-uninitialized -Wno-stringop-truncation -Wno-unused -Wno-misleading-indentation
+CFLAG = -g -O -march=native -std=gnu99 -Wall -Wno-maybe-uninitialized -Wno-stringop-truncation -Wno-unused -Wno-misleading-indentation
 endif
 #CFLAG = -O4 -march=native -fomit-frame-pointer -fprofile-use -std=gnu99
 LIBS = -lm
