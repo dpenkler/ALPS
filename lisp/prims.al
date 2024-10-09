@@ -1,4 +1,4 @@
-;; Time-stamp: <2024-02-25 12:05:37 dave>
+;; Time-stamp: <2024-10-08 22:30:09 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -12,7 +12,8 @@
 ;; Added twoc
 ;; fixed phys
 ;; ToUpper/ToLower become cap/low
-;;
+;; Add generalised sums of sequences
+;; Clean up unused functions and re-group related stuff
 
 (a defun 'de defexpr 'df defmacro 'dm)
 (df $ (a b) (list* 'lambda a b))
@@ -64,38 +65,55 @@
 
 (defun pwd (N) "generate password of N chars" (aref #p (? (p N (p #p)))))
 
-(defun PR (X Y) ; does list X match the beginning or whole of list Y 
-    (cond ((null X) t)
-	  ((null Y) nil) 
-	  ((eq (car X) (car Y)) 
-	   (PR (cdr X) (cdr Y))) 
-	  (t nil)))
+;;
+;; Some simple lisp functions
+;;
+(defun COPYLS (X) "Make a copy of list structure X"
+  (cond ((null X) nil)
+	((atom X) X)
+	(t (cons (COPYLS (car X)) (COPYLS (cdr X))))))
 
-(defun POS (X Y) (find ($ (Z) (PR X Z)) Y t)) ; position of list X in list Y
-
-(defun ASORT (A) (aref A (gup A)))
-
-(defun COPYLS (X) (cond ((null X) nil)
-			((atom X) X)
-			(t (cons (COPYLS (car X)) (COPYLS (cdr X))))))
-(defun COUNT (X) 
+(defun COUNT (X) "Count the number of atoms in list structure X"
   (cond ((null X) 0)
 	((atom X) 1)
 	(t (+ (COUNT (car X)) (COUNT (cdr X))))))
 
-(defun COUNTW (X W) 
+(defun COUNTW (X W) "Count the number of occurrences of atom W in list structure X"
   ((label CWaux lambda (X)
 	  (cond ((null X) 0)
 		((atom X) (cond ((eq X W) 1) (t 0)))
 		(t (+ (CWaux (car X)) (CWaux (cdr X)))))) X))
 
-(defun LCOUNTF (X F) ; count non nil occ
+(defun LCOUNTF (X F) "Count non nil occurrences of F applied to elements of simple list X"
   (let ((C 0)) (mapc '(lambda (X) (if (F X) (incr C))) X) C))
 
-(defun clr () (prat 1 1 "\[[2J") t)
+(defun ASSOC (Y X) ; assoc with equal as opposed to eq on keys
+    (car (find '(lambda (X) (equal (caar X) Y)) X t)))
 
-(defun big () (princ"\[]710;9x15medium,xft:fixed\G"))
-       
+(defun Ddup (x) ; remove in order repetitions
+  (mapn '(lambda (x) (if (equal (car x) (cadr x)) nil (list (car x)))) x))
+ 
+(defun SortByLen  (X) (sort '(lambda (X Y) (lt (len X) (len Y))) X))
+
+(defun FLAT (L) "Flatten list structure L into a simple list"
+  ((label LIN lambda (L R)
+	  (cond ((null L) R) 
+		((atom L) (cons L R)) 
+		(t (LIN (car L) (LIN (cdr L) R))))) L nil))
+
+;;
+;; Terminal utilities
+;;
+(defun clr () (prat 1 1 "\[[2J") t) ;; clear screen
+
+(defun big () (princ"\[]710;9x15medium,xft:fixed\G")) ;; bigger font
+
+(defun Title (T) (princ {(chr 27) "]2;" T (chr 7)}) (terpri 0)) ;; set X window title
+
+;;
+;; Documentation helpers
+;;
+
 (defun def (F) 
 "construct string for prototype of function named by symbol F"
    {"(" F ((label M lambda (X) (cond ((null X) "") 
@@ -132,66 +150,10 @@
 		      (if (chrp (caddr F))
 			  (list (cons (car F) (cadr F)) (caddr F))
 			(cons (car F) (cadr F)))))))))
-		   
-(defun ASSOC (Y X) ; assoc with equal as opposed to eq on keys
-    (car (find '(lambda (X) (equal (caar X) Y)) X t)))
 
-(defun REPL (X Y Z) ; replace X in Y by Z (all lists)
-    (prog (REPaux)
-      (defun REPaux (R Y S)
-	  (cond ((null R) (append Z (REPaux X Y nil)))
-		((null Y) S)
-		((eq (car R) (car Y)) (REPaux (cdr R) (cdr Y) (cons (car Y) S)))
-		(t (append (rev (cons (car Y) S)) (REPaux X (cdr Y) nil))))) 
-      (REPaux X Y nil)))
-
-(defun Ddup (x) ; remove in order repetitions
-  (mapn '(lambda (x) (if (equal (car x) (cadr x)) nil (list (car x)))) x))
- 
-(defun SortByLen  (X) (sort '(lambda (X Y) (lt (len X) (len Y))) X))
-
-(defun FLAT (X)
-  (cond ((null X) nil)
-	((atom X) (list X))
-	((null (cdr X)) (FLAT (car X)))
-	(t (append (FLAT (car X)) (FLAT (cdr X))))))
-
-(defun FLAT1 (X) ;; re-use singleton list in car
-  (cond ((null X) nil)
-	((atom X) (list X)) 
-	((null (cdr X)) (cond ((atom (car X)) X) (t (FLAT (car X))))) 
-	(t (append (FLAT (car X)) (FLAT (cdr X))))))
-
-(defun Linear (L) ; same as FLAT, fewer gc's
-  ((label LIN lambda (L R)
-	  (cond ((null L) R) 
-		((atom L) (cons L R)) 
-		(t (LIN (car L) (LIN (cdr L) R))))) L nil))
-
-(de lin (x) ; same as Linear but more efficient
-    (cond ((null x) nil)
-	  ((atom x) (list x))
-	  (t (mapcan '(lambda (y)
-			(cond ((null y) nil)
-			      ((atom y) (list y))
-			      (t (nconc (lin (car y)) (lin (cdr y))))))
-		     x))))
-
-(defun ATOMLIST (X) 
-  (prog ((#FW 10) 
-	 (M (ReduceL 'c (mapcar '(lambda (X) (p (car X))) X))))
-;	 (M (r 'c (implod (mapcar '(lambda (X) (p (car X))) X)))))
-	(mapc '(lambda (X) (cond (X (princ (car X)) (tab M) 
-				    (prinl (cdr X)) (terpri)))) X) 'ok))
-
-(defun LONGAL ()
-    (let ((A (oblis)) (B 0) (C)) 
-      (while A 
-	(cond ((gt (len (car A)) B) 
-	       (setq C (car A)) 
-	       (setq B (len C)))) 
-	(setq A (cdr A)))C))
-
+;;
+;; Some useful macros and functions
+;;
 (defmacro prog1 (prog1_parm) "Returns the result of evaluating the first form in prog1_parm"
     `(let ((prog1_parm ,(car prog1_parm)))
        ,@(cdr prog1_parm) prog1_parm))
@@ -203,39 +165,82 @@
   `(let ((# ,x))
      (a ,x ,(car y) ,(car y) #)))
 
-(defun TPERF (N)
-  (cond ((HASCAPS "T") (stats t) (TQ N) (stats nil) (SS 4))
-	(t "No stats capabililty")))
 
-(defexpr Profile (Exp) "Show profile executing Exp"
-  (cond ((HASCAPS "T") (unwind-protect
-			   (let () (stats t) (stats) (a Exp (eval (car Exp))))
-			 (print "Unwinding") (stats nil))
-	 (SS 4) Exp)
-	(t "No stats capabililty")))
+(defun type (X) "Return type string of argument X"
+    (cond ((listp X)   "list") 
+	  ((primp X)   "primitive")
+	  ((symbolp X) "symbol")
+	  ((refp X)    "ref") 
+	  ((nump X)    "num") 
+	  ((cpxp X)    "cpx") 
+	  ((chrp X)    "chr") 
+	  (t           "?")))
 
-(defun SS (N)
-    (let ((FL $[car 
-	       (lambda (X) (aref (cadr X) 1))
-	       (lambda (X) (aref (cadr X) 2))
-	       (lambda (X) (aref (cadr X) 3))
-	       (lambda (X) (aref (cadr X) 4))])
-	  (F 'car) (S (stats)) C T R CP TP (I #IO) (PS 0))
-      (setq C (implod (mapcar 'cadr S)) T (implod (mapcar 'caddr S)))
-      (setq CP (RP (/ (* 100 C) (r '+ C)) 2)
-	    TP (RP (/ (* 100 T) (r '+ T)) 2))
-      (setq R {(vtr C) (vtr CP) (vtr T) (vtr TP) })
-      (mapc '(lambda (X) (rplacd X (list (aref R I ()))) (incr I)) S) ; hacked S
-      (if (le N (p FL)) (setq F (aref FL N)))
-      (a S (sort '(lambda (X Y) (lt (F X) (F Y))) S))
-      (mapc '(lambda (X) (a PS (+ PS (aref (cadr X) 4) )) 
-	       (nconc X (list (f PS)))) S)
-      (ATOMLIST S)
-      ;;(mapc '(lambda (X) (princl (fmt (car X):16
-      ;;			      (implod (cdr X)):8:[0 2 0 2 0]))) S)
-      (princl (fmt "Total instruction count: " (r '+ C) 
-		   "; Total time : " (/ (r '+ T) 1e5)))
-      ))
+(defmacro macroexpand (F B) "Show expansion of macro F given arguments B"
+    (if (or (not (symbolp F)) (ne 'macro (car (eval F))))
+	(error (fmt F " is not a macro")))
+    `((fexpr ,@(cdr (eval F))) ,@B))
+;;  (macroexpand FOR I 1 10 (print I)) ;=> (let ((I 1)) (while (le I 10) (print I) (incr I)))
+
+(defmacro FOR (X) ;; Fortran DO loop thing
+  (cond ((eq (caddr X) 'DOWNTO) ;; (FOR I 10 DOWNTO 1 ...)
+	  `(let ((,(car X) ,(cadr X)))
+	     (while (ge ,(car X) ,(car (cdddr X)))
+	       ,@(cdddr X) 
+	       (decr ,(car X)))))
+	 ((eq (cadr X) 'IN)      ;; (FOR I IN list ...)
+	  `(mapc '(lambda (,(car X)) ,@(cdddr X)) ,(caddr X)))
+	  (t `(let ((,(car X) ,(cadr X)))  ;; (FOR I 1 10 ...)
+		(while (le ,(car X) ,(caddr X))
+		  ,@(cdddr X) 
+		  (incr ,(car X)))))))
+
+;; For each
+(defun fe  (F X) (implod  (mapcar F (explod X)))) ;; last axis
+(defun fe1 (F X) (implod .5 (mapcar F (explod 1 X)))) ;; first axis
+(defun fe2 (F X) (implod 1.5 (mapcar F (explod 2 X)))) ;; second axis
+
+(defun FE (F X) ; TODO add axis 
+  (let ((D (p (p X) (p 0 X)))) (FOR I 1 (p D) (aset D (F (aref X I)) I)) D))
+
+(defmacro printl (printl_args) `(print (list ,@printl_args)))
+(defun princl (X) (princ X) (terpri))
+
+(defun al () "print all interned symbols nicely"
+       (colprt (FLAT (oblis))) "(al) done")
+
+(defun SA () "Show all symbols and their values in brief"
+    (prog ((K (FLAT (oblis))) (N 0) (M 0) (#PD 3) (#LL 5) (C (chr 32)))
+	  (while (and K (ne C 'q))
+	    (cond ((and (boundp (car K)) (eval (car K)) )
+		   (print (list (incr N) (car K) (eval (car K))))
+		   (if (zerop (| 40 N)) (setq C (getc))))
+		  (t (incr M)))
+	    (setq K (cdr K)))M))
+
+(defun HL () "Print header line for use with column formatting"
+    (let ((#FW 10)) (princ (i (f (/ #PW 10)))) (terpri))
+    (princ (p #PW (cat (p 9 "-") "|")))(terpri))
+
+(defexpr ps (X) (sys "ps " (cond ((null X) "") ((car X)))))
+
+(de colprt (L) "Column print list L to fit in console width #CW"
+    (let* ((W (implod (mapcar '(lambda (X) (+ 1 (p X))) L)))
+	   (Len (p W)) (WV) (#IO 1)      ; Length of L & Column Width Vector
+	   (MW (+ #CW 1)) (CI 1)         ; Max width + 1 & Column index
+	   (NC (r '+ (<= (s '+ W) MW)))) ; Number of columns
+      (while (lt MW (r '+ (a WV (r 'c 1 (p {(c (/ Len NC)) NC}
+					   (cat W (p (- NC (| NC Len)) 0)))))))
+	(decr NC))
+      (a WV (- WV (tk (- (p WV)) 1))) ; slim WV
+      (FOR I IN L
+	   (princ (fmt I:(aref WV CI)))
+	   (when (gt (incr CI) NC) (a CI 1) (terpri)))
+      (terpri (<> CI 1))))
+  
+;;
+;; Editing helpers
+;;
 
 (df ed (X) (if (sys (fmt "emacsclient " (car X))) (load (car X))))
 
@@ -251,9 +256,9 @@
 	(if (sys (fmt "emacsclient " "+" LINE ":1 " FNAME)) (load FNAME))))
 
 
-; Basic Object Oriented Functions
-; An object is simply a closure aka funarg or functional value
-; i.e. its a list that looks suchly: (funarg (lambda ()..) #<env>)
+;; Basic Object Oriented Functions
+;; An object is simply a closure aka funarg or functional value
+;; i.e. its a list that looks suchly: (funarg (lambda ()..) #<env>)
  
 (defun se (X Y) (eval X (caddr Y)))  ; evaluate sexp X in object Y
 
@@ -262,6 +267,9 @@
 
 (defun jio (X) (se '(break) X)) ; Jump Into Object
 
+;;
+;; Infix to prefix etc
+;;
 (defun IPI (X) 
     (cond ((null X) nil)
 	  ((atom X) X)
@@ -310,16 +318,6 @@
 
 (defmacro apl (X) (IP X))
 
-(defun type (X) 
-    (cond ((listp X)   "list") 
-	  ((primp X)   "primitive")
-	  ((symbolp X) "symbol")
-	  ((refp X)    "ref") 
-	  ((nump X)    "num") 
-	  ((cpxp X)    "cpx") 
-	  ((chrp X)    "chr") 
-	  (t           "?")))
-
 (defun APL79BC ()
   (let ((#PW 128) (CHARS (LoadFont "data/font")))
     (mapc '(lambda (X) (princl (Banner X)))
@@ -364,12 +362,23 @@
     (prog* (PX PY (R (p {(a PX (p X)) (a PY (p Y))} 0)))
        (FOR I 1 PX (FOR J 1 PY (aset R (F (aref X I) (aref Y J)) I J)))R))))
 
+(defun sqr (X) (* X X))
+
+; outer product on lists 
+(defun Outer (F X Y) (mapcar '(lambda (X) (mapcar '(lambda (Y) (F X Y)) Y)) X))
+
+(defun ma (S) "make array of shape S with unique elements starting from #IO"
+  (p S (i (r '* S))))
+
 (defun scalar (X) (p [] X)) ; return Scalar of X
 
 (defun rReduce (F A) "recursively Reduce A with F along all dimensions"
        (cond ((zerop (rank A)) A) (t (rReduce F (r F A)))))
 
 (defun zipv (L) "zip together vectors in list L" (rav (tr (implod .5 L))))
+
+(defun unzip (N V) "unzip N vectors from V into a list"
+       (explod 1 (tr (p {(/ (p V) N) N} V))))
 
 (defun vtr (x) "vector transpose"
   (if (not (onep (rank x))) (error "vtr expects vector")
@@ -388,14 +397,6 @@
 (setqq times    *)
 (setqq divide   /)
 (setqq mod      |)
-
-(defun sqr (X) (* X X))
-
-; outer product on lists 
-(defun Outer (F X Y) (mapcar '(lambda (X) (mapcar '(lambda (Y) (F X Y)) Y)) X))
-
-(defun ma (S) "make array of shape S with unique elements starting from #IO"
-  (p S (i (r '* S))))
 
 ;; some basic constants in physics
 (a c 299792458) ;schpeed of light m/sec
@@ -439,9 +440,6 @@
 
 (defun sum (X) (rReduce '+ X))
 
-(defun sumap (N D) "Sum arithmetic progression over N terms dist D"
-  (/ (* N (+ (* N D) (- D) 2)) 2))
-
 (defun norm (X) (/ X (r 'c (| X))))
 
 (defun range (X) (- (min X) (max X)))
@@ -461,21 +459,24 @@
 		 (rot (i M+N-1) (p {M+N-1 M+N-1} (cat (p N-1 0) A))))
        V)))
 
-(defun count (X MN MX CNT)
-    (prog ((R (p CNT 0)) I (L (- (p X) 1)) (S (/ (- MX MN) (- CNT 1))) (#IO 0))
+(defun count (X MN MX CNT) "Count values from MN to MX in X into CNT buckets "
+       (prog ((R (p CNT 0)) T Bucket (L (- (p X) 1))
+	      (S (/ (- MX MN -1) CNT)) (#IO 0))
 	  (FOR I 0 L (setq T (aref X I))
 	       (if (or (gt T MX) (lt T MN)) nil
-		 (setq T (/ (- T MN) S))
-		 (aset R (+ (aref R T) 1) T))) R))
+		 (setq Bucket (- (c (/ (- T MN -1) S)) 1))
+		 (aset R (+ (aref R Bucket) 1) Bucket))) R))
+
+;; (count (? (p 1000 100)) 1 100 10) ;=> [95 101 96 105 100 109 106 94 86 108]
+;; APL way  (r '+ (p [10 10] (r '+  (o '= (i 100) (? (p 1000 100))))))
+
+(defun HI (V) ; Histogram
+  (r '+ (o '= (i (r 'c V)) V)))
+; (HI (implod (mapcar 'p (Linear (oblis))))) 
 
 (defun diff (X) 
   "difference between successive elements of a Vector X (p res) = (- (p X) 1)" 
     (let ((L (- (p X) 1))) (- (tk (- L) X) (tk L X))))
-
-(defun HI (X) ; Histogram
-  (prog ((P (p X)) (M (r 'c X)) H) (a H (p M 0)) 
-	(FOR I 1 P (a J (aref X I)) (aset H (+ (aref H J) 1) J)) H))
-; (HI (implod (mapcar 'p (Linear (oblis))))) 
 
 ;; basic number ops
 
@@ -492,9 +493,7 @@
 (defun sigmoid (X) (/ (- (exp X) 1) (+ (exp X) 1)))
 
 (defun rootq (a b c) "roots of a quadratic ax^2+bx+c"
-       (implod (mapcar '(lambda (op)
-			  (/ (op (- b) (sqrt (- (sqr b) (* 4 a c)))) (* 2 a)))
-	  '(+ -))))
+  (/ (+ (- b) (* [1 -1] (sqrt (- (sqr b) (* 4 a c))))) (* 2 a)))
 
 (defun sumseq (n) "sum of seq of first n integers"
        (/ (* n (+ n 1)) 2))
@@ -502,14 +501,18 @@
 (defun sumsubs (n m) "sum of all j's for j from m to n"
        (/ (* (+ n m) (- n m -1)) 2))
 
-;; (revsum (subseq n)) ;=> n
+;; (revsum (sumseq n)) ;=> n
 (defun revsum (k) "seq of integers that sum to k"
        (/ (- (sqrt (+ (* 8 k) 1)) 1) 2))
 
 (defun revsumsub (k m) "seq of integers from m that sum to k"
-       (scalar (tk 1 (rootq 1 1 (- m (sqr m) (* 2 k))))))
+       (scalar (rootq 1 1 (- m (sqr m) (* 2 k)))))
 
-(defun REP (X N) (cond ((zerop N) nil) (t (cons X (REP X (- N 1))))))
+(defun gsumseq (N D A) "General sum of seq S(I)=D*I-A for integer I 1<=I<=N"
+       (/ (* N (- (* (+ N 1) D)  (* 2 A))) 2))
+
+(defun gseq (N D A) "Generate seq  S(I)=D*I-A for integer I 1<=I<=N"
+       (- (* D (i N)) A))
 
 ;;
 ;; Time and date utilities
@@ -518,7 +521,7 @@
 
 (defun USDATE () (FD (date (- (clock) (* 9 3600)))))
 
-(defun FMTDATE (T)
+(defun FMTDATE (T) "Format date into Mth DD YYYY HH:MM:SS"
     (let ((M (p [12 3] "JanFebMarAprMayJunJulAugSepOctNovDec"))
 	  (#PP 0))
       (fmt (aref M (+ (aref T [5]) 1) ())
@@ -526,7 +529,7 @@
 	   " " (aref T 3):-2 ":" (aref T 2):-2 ":" (aref T 1):-2)))
 
 
-(defun FMTNDATE (T) 
+(defun FMTNDATE (T) "Format date into DDMMYY"
     (implod (mapcar '(lambda (X Y) (tk -2 (fmt (+ Y (aref T X))))) 
 		    '(4 5 6) '(100 101 1900))))
 
@@ -541,23 +544,25 @@
 ;; Len
 ;;
 
-(defun clen (X) (cond ((null X) 0)(t (clenaux X (cdr X) 1))))
-
-(defun clenaux (X Y Z) (cond ((null Y) Z)
-			  ((null (cdr Y)) (+ Z 1))
-			  ((eq X Y) (list 'circular_list 'at Z))
-			  (t (clenaux (cdr X) (cdr(cdr Y)) (+ Z 2)))))
+(defun clen (X) "List length that can deal with circular lists"
+  (cond ((null X) 0)
+	(t ((label clenaux lambda (X Y Z)
+		  (cond ((null Y) Z)
+			((null (cdr Y)) (+ Z 1))
+			((eq X Y) (list 'circular_list 'at (/ (+ Z 1)2)))
+			(t (clenaux (cdr X) (cddr Y) (+ Z 2)))))
+	    X (cdr X) 1))))
 
 (defun ML (N) (prog (P) (setq P (explod (i N))) (rplacd (last P) P) (clen P)))
 
-(defexpr ls (X) (colprt (sort 'lt (apply 'dl X))))
-(defun al () (colprt (FLAT (oblis))) "(al) done")
-(defexpr ps (X) (sys "ps " (cond ((null X) "") ((car X)))))
-(defun princl (X) (princ X) (terpri))
+;;
+;; Directory listing utilities
+;;
 
-;;
-;; File system utilities
-;;
+(defexpr ls (X) (let ((A (apply 'dl X)))
+		  (cond ((null A) "No such file or directory")
+			((atom A) A)
+			(t (colprt (sort 'lt A))))))
 
 (defun listf (F S W) 
     (let ((R "-UGSrwxrwxrwx") (T "fc?d?b?-?l?s???") (Ind [9 2 3 1]))
@@ -596,38 +601,9 @@
 	(L (- (p Suffix))))
     (sort 'lt (mapcan  '(lambda (X) (if (eql (tk L X) Suffix) (list X))) A))))
 
-(defun SUM () 
-  (let ((X 0) Y) 
-      (while (setq Y (read)) 
-	(print (setq X (+ X Y))))))
-
-(defmacro macroexpand (F B) 
-    (if (or (not (symbolp F)) (ne 'macro (car (eval F))))
-	(error (fmt F " is not a macro")))
-    `((fexpr ,@(cdr (eval F))) ,@B))
-
-(defmacro FOR (X) 
-  (cond ((eq (caddr X) 'DOWNTO) ;; (FOR I 10 DOWNTO 1 ...)
-	  `(let ((,(car X) ,(cadr X)))
-	     (while (ge ,(car X) ,(car (cdddr X)))
-	       ,@(cdddr X) 
-	       (decr ,(car X)))))
-	 ((eq (cadr X) 'IN)      ;; (FOR I IN list ...)
-	  `(mapc '(lambda (,(car X)) ,@(cdddr X)) ,(caddr X)))
-	  (t `(let ((,(car X) ,(cadr X)))  ;; (FOR I 1 10 ...)
-		(while (le ,(car X) ,(caddr X))
-		  ,@(cdddr X) 
-		  (incr ,(car X)))))))
-
-(defun fe  (F X) (implod  (mapcar F (explod X))))
-(defun fe1 (F X) (implod .5 (mapcar F (explod 1 X))))
-(defun fe2 (F X) (implod .5 (mapcar F (explod 2 X))))
-
-(defun FE (F X) ; TODO add axis 
-  (let ((D (p (p X) (p 0 X)))) (FOR I 1 (p D) (aset D (F (aref X I)) I)) D))
-
-(defmacro printl (printl_args) `(print (list ,@printl_args)))
-
+;;
+;; Capabilities
+;;
 (defun HASCAPS (X) (onep (r '^ (elt X #CP))))
 
 (defun sc () 
@@ -656,15 +632,6 @@
       (princ (fmt "Capabilities: " #CP "\n"))
       (mapc '(lambda (X) (tab 3) (princ (cadr (assoc X CapAlist))) (terpri)) 
 	    (explod #CP)) t))
-
-(defun SPC () ; Show performance counters
-  (let ((W (r 'c (implod (mapcar '(lambda (X) (p (car X))) #PC)))))
-    (incr W)
-    (mapc '(lambda (X) (prin0 (car X)) (tab W) (princl (cdr X))) #PC)))
-
-(defun RPC () (mapc '(lambda (X) (aset (cdr X) 0 ())) #PC)) ; Reset PCs
-
-(defun LOG (L) (princ (fmt (DATE) " " L "\n") #LF) L)
 
 ;;
 ;; Debug helpers (should go into a separate file
@@ -728,6 +695,26 @@
 			      (cddr (caddr (nth 4 Exp))))))
 	(fmt "Trace disabled on function " Name))))
 
+(defun FF (P S) 
+    (let ((T (dp (+ P (p 'defun)) S)) U V) ; drop defun
+      (a U (k (s 'v (<> " " T)) T))        ; drop leading spaces
+      (a V (ss " " U))                     ; find first space
+      (if (gt V 0) (intern (aref U (i (- V 1)))) nil)))
+
+(defun TraceDefunsInFile (F) 
+    (fgrep '(lambda (P S)  (princl (eval (list 'Trace  (FF P S)))))
+	   'de (list F)))
+
+(a ERRNOS ())
+(defun errno (X)
+  (if (not ERRNOS) (a ERRNOS(readf "data/errnos")))
+  (cond ((nump X) (car (findc 'cadr ERRNOS X)))
+	((chrp X) (car (findc 'car ERRNOS X)))
+	(t (error "errno needs number or name"))))
+
+;;
+;; Performance and profiling stuff
+;;
 (defexpr TIME (X) (let ((T1 (time))) (print (eval (car X))) (- (time) T1)))
 (defexpr Time (X) (let ((T1 (time))) (eval (car X)) (- (time) T1))) ; no print
 (defexpr ETIME (X) ; like time with elapsed also
@@ -745,20 +732,51 @@
 	(aset R (r '+ (aref R [9 10])) 9) ; accumulate guest times
 	(princl (fmt (/ (tk 9 R) 100):8:2))))
 
-(de colprt (L) "Column print list L to fit in console width #CW"
-    (let* ((W (implod (mapcar '(lambda (X) (+ 1 (p X))) L)))
-	   (Len (p W)) (WV) (#IO 1)      ; Length of L & Column Width Vector
-	   (MW (+ #CW 1)) (CI 1)         ; Max width + 1 & Column index
-	   (NC (r '+ (<= (s '+ W) MW)))) ; Number of columns
-      (while (lt MW (r '+ (a WV (r 'c 1 (p {(c (/ Len NC)) NC}
-					   (cat W (p (- NC (| NC Len)) 0)))))))
-	(decr NC))
-      (a WV (- WV (tk (- (p WV)) 1))) ; slim WV
-      (FOR I IN L
-	   (princ (fmt I:(aref WV CI)))
-	   (when (gt (incr CI) NC) (a CI 1) (terpri)))
-      (terpri (<> CI 1))))
-    
+(defun TPERF (N)
+  (cond ((HASCAPS "T") (stats t) (TQ N) (stats nil) (SS 4))
+	(t "No stats capabililty")))
+
+(defexpr Profile (Exp) "Show profile executing Exp"
+  (cond ((HASCAPS "T") (unwind-protect
+			   (let () (stats t) (stats) (a Exp (eval (car Exp))))
+			 (print "Unwinding") (stats nil))
+	 (SS 4) Exp)
+	(t "No stats capabililty")))
+
+(defun SS (N)
+    (let ((FL $[car 
+	       (lambda (X) (aref (cadr X) 1))
+	       (lambda (X) (aref (cadr X) 2))
+	       (lambda (X) (aref (cadr X) 3))
+	       (lambda (X) (aref (cadr X) 4))])
+	  (F 'car) (S (stats)) C T R CP TP (I #IO) (PS 0))
+      (setq C (implod (mapcar 'cadr S)) T (implod (mapcar 'caddr S)))
+      (setq CP (RP (/ (* 100 C) (r '+ C)) 2)
+	    TP (RP (/ (* 100 T) (r '+ T)) 2))
+      (setq R {(vtr C) (vtr CP) (vtr T) (vtr TP) })
+      (mapc '(lambda (X) (rplacd X (list (aref R I ()))) (incr I)) S) ; hacked S
+      (if (le N (p FL)) (setq F (aref FL N)))
+      (a S (sort '(lambda (X Y) (lt (F X) (F Y))) S))
+      (mapc '(lambda (X) (a PS (+ PS (aref (cadr X) 4) )) 
+	       (nconc X (list (f PS)))) S)
+      (ATOMLIST S)
+      ;;(mapc '(lambda (X) (princl (fmt (car X):16
+      ;;			      (implod (cdr X)):8:[0 2 0 2 0]))) S)
+      (princl (fmt "Total instruction count: " (r '+ C) 
+		   "; Total time : " (/ (r '+ T) 1e5)))
+      ))
+
+(defun SPC () ; Show performance counters
+  (let ((W (r 'c (implod (mapcar '(lambda (X) (p (car X))) #PC)))))
+    (incr W)
+    (mapc '(lambda (X) (prin0 (car X)) (tab W) (princl (cdr X))) #PC)))
+
+(defun RPC () (mapc '(lambda (X) (aset (cdr X) 0 ())) #PC)) ; Reset PCs
+
+
+;;
+;; File system and directory utilities
+;;
 (defun getf (Fname) "Return character array of contents of text file FName"
     (let* ((#IO 0) (EOL (chr 10)) C P (N 0) (L 0) (maxLen 0) (nLines 0)
 	   (F (open Fname)))
@@ -786,13 +804,6 @@
    (let (L R) (a f (open f "r")) 
 	(while (not (eof f)) (a R (readl f)) (if R (a L (append L (list R)))))
 	(close f) L))
-
-(a ERRNOS ())
-(defun errno (X)
-  (if (not ERRNOS) (a ERRNOS(readf "data/errnos")))
-  (cond ((nump X) (car (findc 'cadr ERRNOS X)))
-	((chrp X) (car (findc 'car ERRNOS X)))
-	(t (error "errno needs number or name"))))
 
 (defun dirp (N) ((lambda (X) (and (consp X) (null (car X)))) (st N)))
 
@@ -838,27 +849,7 @@
 	  (Files (mapcan '(lambda (D) (PickFiles (DL D) C)) #LP)))
 	 (grep {" " F " "}Files)))
 
-(defun SA () ; show all atoms
-    (prog ((K (FLAT (oblis))) (N 0) (M 0) (#PD 3) (#LL 5) (C (chr 32)))
-	  (while (and K (ne C 'q))
-	    (cond ((and (boundp (car K)) (eval (car K)) )
-		   (print (list (incr N) (car K) (eval (car K))))
-		   (if (zerop (| 40 N)) (setq C (getc))))
-		  (t (incr M)))
-	    (setq K (cdr K)))M))
-
-(defun HL () 
-    (let ((#FW 10)) (princ (i (f (/ #PW 10)))) (terpri))
-    (princ (p #PW (cat (p 9 "-") "|")))(terpri))
-
 (defun Copyf (f1 f2) (let ((#PF (open f2 "w"))) (du f1) (close #PF)))
-
-(defun Save (Vars Dest) 
-    (cond ((or (not (symbolp Dest)) (not (listp Vars)))  "bad args") 
-	  (t (set Dest (mapcar '(lambda (X) (list X (eval X))) Vars)) "ok")))
-
-(defun Restore (X) 
-    (mapc '(lambda (X) (print (car X)) (set (car X) (cadr X))) X))
 
 (defun grep (P X)
     (mapcan '(lambda (X) 
@@ -885,19 +876,15 @@
 	       (close F)))
 	  X))
 
-(defun FF (P S) 
-    (let ((T (dp (+ P (p 'defun)) S)) U V) ; drop defun
-      (a U (k (s 'v (<> " " T)) T))        ; drop leading spaces
-      (a V (ss " " U))                     ; find first space
-      (if (gt V 0) (intern (aref U (i (- V 1)))) nil)))
+;;
+;; General utility functions
+;;
 
-(defun TraceDefunsInFile (F) 
-    (fgrep '(lambda (P S)  (princl (eval (list 'Trace  (FF P S)))))
-	   'de (list F)))
+(defun log (L) "Log L to the log file with date"
+  (princ (fmt (DATE) " " L "\n") #LF) L)
 
-(defun Title (T) (princ {(chr 27) "]2;" T (chr 7)}) (terpri 0))
 
-(defexpr note (X) 
+(defexpr note (X) "append X to note file in the working directory"
     (let ((F (open "note" "wa"))) 
       (mapc '(lambda (X) 
 	       (if (gt (+ (lpos F) (plen X)) #PW) (terpri 1 F))
@@ -906,7 +893,7 @@
       (if (gt (lpos F) 1) (terpri 1 F))
       (close F)))
 
-(defun pg (F) 
+(defun pg (F) "Page file F to terminal"
     (prog* 
      ((Text (getf F)) (I 0) (L  (- #CH 3)) C (Run t)
       N (NL (aref (p Text) 1)) (IL (i NL))
@@ -933,8 +920,7 @@
 	     ((eq C "b") (break pg))
 	     (t (Disp L))))))
 
-(defexpr fx (D)
-  "select file to pg or dir from dir D"
+(defexpr fx (D) "select file to pg or dir from dir D"
   (require 'select)
   (let ((OD (if (null D) (wd)
 	      (wd (if (symbolp (car D)) (car D) (eval (car D))))))
@@ -956,3 +942,11 @@
 		 (princ (fmt ";; End of file: " (car File) "\n")) 
 		 (close #PF))
 		(t (error "Bad function")))))
+
+(defun Save (Vars Dest) "Save list of Vars to symbol Dest"
+    (cond ((or (not (symbolp Dest)) (not (listp Vars)))  "bad args") 
+	  (t (set Dest (mapcar '(lambda (X) (list X (eval X))) Vars)) "ok")))
+
+(defun Restore (X) "Restore symbols saved to X"
+    (mapc '(lambda (X) (print (car X)) (set (car X) (cadr X))) X))
+
