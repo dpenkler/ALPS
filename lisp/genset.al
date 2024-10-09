@@ -299,8 +299,9 @@
   (let ((K (cat 0 (i (f (/ N 2))))))
     (r '+ (/ (! N) (* (! K) (! (- N (* 2 K))) (exp 2 K))))))
 
-; Make list of permutations (ML (Ehrlich 4))
-(defun ML (F) (let ((T (F))) (cond ((null T) nil) (t (cons (+ T) (ML F))))))
+; Make list of permutations (MLPerm (Ehrlich 4))
+(defun MLPerm (F)
+  (let ((T (F))) (cond ((null T) nil) (t (cons (+ T) (MLPerm F))))))
 
 ;; Pairs from (i X) and (i Y)
 (defun Apairs (X Y) (+ #IO (enc {X Y} (- (i (* X Y)) #IO))))
