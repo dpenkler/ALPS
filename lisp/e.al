@@ -82,6 +82,10 @@
     (r '- -1 -1 (/ (o 'exp X J) (p M (! J))))))
 
 
+(defun esin (X) (/ (- (exp (* 0j1 X)) (exp (* 0j-1 X))) (* 2 0j1)))
+
+(defun ecos (X) (/ (+ (exp (* 0j1 X)) (exp (* 0j-1 X)))  2))
+
 (defun ANG (N P) ; generate 2N+1 angles in radians from [-pi..pi]*P
          (let ((#IO 0)) (* (% P) (/ (- N (i (+ 1 (* 2 N)))) N))))
 
@@ -91,7 +95,8 @@
 	  (print (list T J X))
 	  (a T (* T (/ Y (* J (- J 1)))))
 	  (a J (+ J 2))
-	  (a OX X X (+ T X))) X))
+	  (a OX X X (+ T X)))
+	X))
 
 (defun mcos (X) 
   (prog ((T  1) (Y (- (sqr X))) (J 2) OX)
