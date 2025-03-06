@@ -1,5 +1,5 @@
-/*                           VERSION  -8.36-                                */
-#define REV          "Time-stamp: <2024-10-08 18:19:32 dave>"
+/*                           VERSION  -8.38-                                */
+#define REV          "Time-stamp: <2025-03-06 17:06:47 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
