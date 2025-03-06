@@ -2979,6 +2979,8 @@ alpsOutsn(alpserr,5,
  lex.ev->owner = opcd;         /* debug */
  lex.ev->serno = mEvctr++;
  ASSERT(isEnv(lex));
+#else 
+ for (i=0;i<n;i++) lex.ev->args[i].ar.wh = 0; // just symbols FWIW
 #endif
  return lex;
 }
@@ -3026,7 +3028,7 @@ static void initEnv() { /* initialise environment blocks world */
   snenv(r.s.envbase, pnil);                       /* terminate list         */ 
   r.s.env_blks  = 1;    /* counter of total number of env blks in play */
   envcnt        = 0;    /* environment counter for deep binding        */
-  envp         = pnil;  /* Initialise global environment pointer       */
+  envp          = pnil; /* Initialise global environment pointer       */
 }
 
 static pointer allocDest(integer n) {
@@ -3664,43 +3666,57 @@ inline static int unMarked(pointer rex) {
   return ((isCons(rex) && !isFSmarked(rex)) || (isAtom(rex) && !isMarked(rex)));
 }
 
+inline static void markSym(pointer lex) {
+#if (MMDBG != None)
+  ASSERT(isSym(lex);
+#endif
+ mark(lex);
+ boogey_sym++;
+ markacc(lex.at->plist);   /*dont forget the property list*/
+ /*       dprtln(out,lex,20); */
+ if (lex.at->value.wh) markacc(lex.at->value);
+}
+
 static void markEnv(pointer emark) { /* FIXME: Optimise */
   int i,m,n,touched=0;
   int zz;
 #if (MMDBUG==High)
-  alpsOutsn(alpserr,5, 
-	    "Markenv(",itox(emark.wh),")=>",itos(emark.pt->it),".... \n ");
-#endif
-  ASSERT((emark.wh >= r.s.envbase.wh) && 
-	 (emark.wh < r.s.envlim.wh)   && isEnv(emark));
-  while (!isNil(emark) && !isMarked(emark)) {
-#if (MMDBUG==High)
-    {pointer rex;
-    int bkt;
-  for (bkt=0;bkt<=num_env_bkts;bkt++)
-    for (rex=env_free[bkt];!(isNil(rex));rex=nenv(rex))
-      if (isEqq(rex,emark)) {
-	alpsOutsn(alpserr,3,"markEnv free env ", itox(emark.wh),"\n");
+    alpsOutsn(alpserr, 9,"Marking envblk #",itos(boogey_ecnt)," @",
+	      itox(emark.wh)," for nargs=", itos(n)," argp=",
+	      itox(emark.ev->argp.wh), "\n");
 #if (DEBUG)	
 	alpsOutsn(alpserr,4," ownr = ",evtab[emark.ev->owner].lispName,
 	          " serno= ",itos(emark.ev->serno));
 #endif
+    /* showEnv(alpserr,emark); */
+#endif
+  ASSERT((emark.wh >= r.s.envbase.wh) && 
+	 (emark.wh < r.s.envlim.wh)   && isEnv(emark));
+  /* Go down the env stack marking as we go */
+  while (!isNil(emark) && !isMarked(emark)) {
+#if (MMDBUG==High)
+    {pointer rex;
+    int bkt;
+    /* Paranoia check whether env being marked is part of the free envs */
+  for (bkt=0;bkt<=num_env_bkts;bkt++)
+    for (rex=env_free[bkt];!(isNil(rex));rex=nenv(rex))
+      if (isEqq(rex,emark)) {
+	alpsOutsn(alpserr,3,"markEnv free env ", itox(emark.wh),"\n");
   }}
 #endif
     n = emark.ev->nargs;
-#if (MMDBUG==High)
-    alpsOutsn(alpserr, 7,"Marking envblk #",itos(boogey_ecnt)," @",
-	      itox(emark.wh)," for ", itos(n)," args \n");
-    /*    showEnvStk(emark); */
-#endif
     mark(emark);
     touched++;
     boogey_ecnt++;
     zz = boogey_norefs;
     m = ((n > 0) && (emark.ev->argp.wh)) ? warg(emark) + 1 : n;
     for (i=0; i<m; i++) {
-      if (argn(i,emark).wh)
-      markacc(argn(i,emark)); /* symbols were already marked */
+      /* for funargs the symbols in the env may be unbound in oblis
+         so would not be marked. So mark them here */
+      if (symn(i, emark).wh)
+	markacc(symn(i, emark));
+      if (argn(i, emark).wh) 
+	markacc(argn(i, emark)); 
     }
 #if (MMDBUG==High)
     ASSERT(m<=n);
@@ -3846,14 +3862,6 @@ inline static void markRef(pointer lex) {
   for (i=0;i<nels(lex);i++) markacc(vadd(lex).pt[i]);
 }
 
-inline static void markSym(pointer lex) {
- mark(lex);
- boogey_sym++;
- markacc(lex.at->plist);   /*dont forget the property list*/
- /*       dprtln(out,lex,20); */
- if (lex.at->value.wh) markacc(lex.at->value);
-}
-
 static bool markFS(pointer lex) { /* returns true if freshly marked */
   integer  index = (lex.wh - r.s.fspc.wh) / rg_len;
   if (index < 0 || index >= fs_size) {
@@ -3989,7 +3997,7 @@ static void boogeyMan(const acctp acc) {
     for (olex = lex.rg->ar;!isNil(olex);olex = olex.rg->dr) {
       tex = olex.rg->ar;
       if (isSym(tex)) { /* if value or plist being used keep the bugger */
-	if (getVal(tex).wh || !isNil(tex.at->plist)) markSym(tex);
+	if ((getVal(tex).wh || !isNil(tex.at->plist)) && !isMarked(tex)) markSym(tex);
 	else {
 /*	  alpsOuts(alpserr,"oblis nil dude ");
 	  dprtln(alpserr,tex,16); */
@@ -7371,7 +7379,7 @@ static integer printFree(fibrec * out, integer n) {
     cbusy += labs(lex.bk->bsize);
     ccnt++;
     rex.wh = lex.wh + alcbk_ohd;
-    ASSERT(!isMarked(rex));
+    //ASSERT(!isMarked(rex));
     //alpsOutsn(out,4,"Vh ",itosn(lex.bk->bsize,8)," tag ",itox(rex.at->idntt));
     //dprtln(out,rex,20);
   }
