@@ -1269,14 +1269,15 @@
 	 (Res (F K))               ;; apply function to complex interval
 	 (Obj (p {4 SS} 1))        ;; target object
 	 (#PM EZ_LINES)
-	 (#DM EZ_QUADS)
+	 (#DM EZ_QMESH)
 	 (#OP {0 0 (* 2 N)}) 
 	 (#OF {0 0 (- N)})
-	 (#NF {N (- N)}) 
+	 (#NF {N  (- N)})
 	 (#WN {(- I) I (- I) I})
 	 (ZL I)) ;; Z clip limit
     (aset Obj (o '% [9 11] K) [2 1] () ()) ;; split real and im to planes 2 & 1
-    (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
+;;    (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
+    (aset Obj (* Scale (re Res)) 3 () ()) ;; scale & clip res
     (gcanvas Canvas)
     (dispwdgt Canvas)
     (glinit)
@@ -1284,7 +1285,6 @@
     (glmodel EZ_LIGHT_MODEL_AMBIENT [1 1 1 0])
     (glmodel EZ_LIGHT_MODEL_LOCAL_VIEWER 1)
     (glmodel EZ_LIGHT_MODEL_TWO_SIDE 1) 
-   
     (light EZ_LIGHT0 EZ_POSITION {0 0 N 0})
     (light EZ_LIGHT0 EZ_DIFFUSE {1 1 0 0})
     (gmat EZ_FRONT_AND_BACK EZ_DIFFUSE [0.5 0.5 0.5 1])
