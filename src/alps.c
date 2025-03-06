@@ -33,7 +33,7 @@
 #define Circumspect 1
 #define Low         2
 #define High        3
-#define MMDBUG      !FAST       
+#define MMDBUG      None
  
 #define FORWARD      /* We have forward declarations here my dear Blaise */
 #define ENVONLY  1
