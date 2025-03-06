@@ -108,6 +108,12 @@
 	  (a OX X X (+ T X)))
 	X))
 
+(defun Euler (Theta)
+  "(exp (* 0j1 Theta)) => (+ (cos Theta) (* 0j1 (sin Theta)))"
+  (let ((mcos (cos Theta))) (+ mcos (* 0j1 (% 0 mcos)))))
+;;  (+ 1 (Euler pi)) ;=> 0  ;; Euler's identity
+;;  (+ 1 (exp (% 0j1)))     ;; built-in version
+
 (defun TTEXP (M N) (r '+ (+ (sqr (SIN (ANG M 1) N))
 			    (sqr (COS (ANG M 1) N)))))
 
