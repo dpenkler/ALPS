@@ -9523,10 +9523,10 @@ static pointer iota(integer nargs, pointer parms) {
       inc = vadd(rent).np[1];
       top = vadd(rent).np[2];
       if (inc == 0) error(inv_funarg,"inc must be non-zero");
-      if (inc > 0) j =  (top + tolerance - val) / inc;
-      else         j =  (top - tolerance - val) / inc;
-      if (j < 0) j = 0;
-      else j++;
+      if (inc > 0) temn =  (top + tolerance - val) / inc;
+      else         temn =  (top - tolerance - val) / inc;
+      if (temn < 0) j = 0;
+      else j = 1 + trunc(temn);
       break;
     }
     r.s.lds.ip[0] = (j>=getNumVal(a.v.hio))?j:0;
