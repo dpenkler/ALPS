@@ -13227,13 +13227,13 @@ stkp +--------------+
 	(isDot(iexp)   || isDash(iexp)  || 
 	 isRsbrc(iexp) || isRcbrc(iexp) || 
 	 isNil(iexp)   || isNum(iexp)   || isRpar(iexp)))
-      goto alret;                    /* yes, go deal with it in  brkx        */
-    if (isNum(iexp) && (getInt(iexp) < 0)) { /* bail                         */
+      goto alret;                    /* yes, go deal with it in  brkx       */
+    if (isNum(iexp) && (getInt(iexp) < 0)) { /* bail                        */
       alpsOutsln(alpserr,"User break exit to main...");
-      opcd = s_bail;              
-      goto alcnt;
+      opcd = s_bail;                 /* bail exits on done, dispacher will  */
+      goto alcnt;                    /*  "thaw" us and reset the stack.     */
     } else if (isNil(iexp)) {        /* continue                            */
-      popStk(7);              
+      popStk(7);                     /* tos == s_brkout                     */
       goto alret;
     }
     goreto(eval, s_brkc);            /* no, eval iexp and come back to brkc  */
@@ -13295,22 +13295,23 @@ stkp +--------------+
 	goto alcnt;
       }
       /* Level i sought >= 0; move stack and env to appropriate level         */
-      p1 = restore();                     /* get old current level            */
+      p1 = restore();                     /* get old level                    */
       j  = (isNil(p1)) ? -1 : getInt(p1); /* top level is -1                  */
       p2 = findCtl(t,j,s_teval1);         /* eval frame at old level          */
-      p1 = findCtl(t,i,s_teval1);         /* eval frame at new level          */
-      if (isNil(p1)) {                    /* Can't find new level (too low) ? */
-	p1 = findLastCtl(t,&i,s_teval1);  /* Yes, goto the bottom of the class*/
-	if (isNil(p1)) goto brk_cont;     /* nothing lower? stay where you are*/
+      p4 = findCtl(t,i,s_teval1);         /* eval frame at new level          */
+      if (isNil(p4)) {                    /* Can't find new level (too low) ? */
+	p4 = findLastCtl(t,&i,s_teval1);  /* Yes, goto the bottom of the class*/
+	if (isNil(p4)) {                  /* nothing lower? stay where you are*/
+	  save(p1); goto brk_cont; }      /* restore old level                */
 	iexp = mkNum(i);                  /* use level returned by findLastCtl*/
       }
-      p3 = p1.pt[-3];                     /* environment ptr at desired level */
+      p3 = p4.pt[-3];                     /* environment ptr at desired level */
       if (j >= 0) tenvp = p2.pt[-3];      /* j>=0 -> current level is not top */
       else      { tenvp = envp;      p2 = stkp; } /* current level is on top  */
       setEnv(restore( ));                         /* current saved environment*/
       ASSERT(isEqq(envp,tenvp));/*must be the same as in the eval stack frame */
-      if (i < j) { crank_up(p2,p1);    swap_up(envp,p3);   } /* going up      */
-      else       { crank_down(p2,p1);  swap_down(envp,p3); } /* going down    */
+      if (i < j) { crank_up(p2,p4);    swap_up(envp,p3);   } /* going up      */
+      else       { crank_down(p2,p4);  swap_down(envp,p3); } /* going down    */
       setEnv(p3);                     /* Note crank operations may set envp ! */
       save(envp);                     /* new current environment              */
       save(iexp);                     /* current level flag from user         */
@@ -13318,7 +13319,7 @@ stkp +--------------+
       strcat(bpb,(char *)itos(i));    /* "brkNN#: " where NN is current level */
       strcat(bpb,"#: ");              
       r.s.bprompt = alps_make_prompt(bpb); /* set break prompt to level prompt*/
-      p2 = p1.pt[-1];                      /* iexp at current level           */
+      p2 = p4.pt[-1];                      /* iexp at current level           */
       setVal(a.v.hex,p2);                  /* set #EX to iexp at current level*/
       alpsPrint(alpsout,p2,true,opcd);     /* show it to the user             */
       alpsOutc(alpsout,eol);
