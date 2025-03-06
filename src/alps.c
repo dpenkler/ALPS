@@ -1111,7 +1111,7 @@ struct fparms ftt[] = {
   /* 9 cv     */  {1,0,0,{{man,cv}}},
   /*10 fun    */  {1,0,0,{{man,fun}}},
   /*11 tcb    */  {1,0,0,{{man,tcb}}},
-  /*12 tcb num*/  {2,0,0,{{man,tcb},{man,nsgl}}},
+  /*12 num tcb*/  {2,0,0,{{man,nsgl},{man,tcb}}},
   /*13 send   */  {2,1,0,{{man,sxp},{man,tcb},{opt,env}}},
   /*14 mappers*/  {2,0,1,{{man,fun},{man,lst},{rst,lst}}},
   /*15 finders*/  {3,0,0,{{man,fun},{man,lst},{man,any}}},
@@ -15078,8 +15078,8 @@ stkp +--------------+
     goto srend;
 
   case s_setpri:
-    p1   = arg1(parm);
-    temi = getInt(arg2(parm));
+    p1   = arg2(parm);
+    temi = getInt(arg1(parm));
     if (temi < TCB_MAX_PRI || temi > TCB_MIN_PRI)
       error(inv_funarg," priory out of range");
     p1.tb->priority = temi;
