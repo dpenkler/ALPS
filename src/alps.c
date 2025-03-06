@@ -1921,9 +1921,13 @@ static void alpsRead(int fd) { /* select callback for files */
   fibrec *fp  = fparr[fd];
   lex         = fp->ibuf;
   ilen        = nels(lex);
-  if (fp->isatty == 2) alpsBlockSignals();
-  len         = read(fp->fd,vadd(lex).sp,ilen);
-  if (fp->isatty == 2) alpsUnblockSignals();
+  if (fp->isatty == 2) {
+    alpsBlockSignals();
+    len = read(fp->fd,vadd(lex).sp,ilen);
+    alpsUnblockSignals();
+  } else {
+    len = read(fp->fd,vadd(lex).sp,ilen);
+  }
   fp->ecci    = len;
   fp->ifpos  += len;    
   fp->ilpos   = 0;
