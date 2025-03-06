@@ -573,12 +573,13 @@ static pointer argn(integer i, pointer lex) {return lex.ev->args[i].dr;}
 static pointer cargn(integer i, pointer lex) {
   return (i < nargs(lex)) ? lex.ev->args[i].dr : pnil;}
 static pointer symn(integer i, pointer lex) {return lex.ev->args[i].ar;}
-
 inline static void ssym1(pointer lex, pointer rex) {lex.ev->args[0].ar = rex;}
+inline static void ssymn(pointer lex, integer n, pointer rex) {
+  lex.ev->args[n].ar = rex;}
 inline static void sarg1(pointer lex, pointer rex) {lex.ev->args[0].dr = rex;}
 inline static void sarg2(pointer lex, pointer rex) {lex.ev->args[1].dr = rex;}
 inline static void sargn(pointer lex, integer n, pointer rex) {
- lex.ev->args[n].dr = rex;}
+  lex.ev->args[n].dr = rex;}
 
 /* basic type predicates */
 inline static bool isNum  (pointer i) {return((i.pt->wh>>FBits) == num);}
