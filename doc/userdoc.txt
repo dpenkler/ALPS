@@ -7286,7 +7286,7 @@ buf
 
 Syntax: (buf <chr> [<buffer-object>])
 
-Function: If only the first argument is given it llocates and internal
+Function: If only the first argument is given it allocates an internal
           buffer structure for use in Input / Output primitives. The
           initial contents of the buffer are the characters of the
           <chr> parameter. To assign other contents use the dyadic
@@ -7419,7 +7419,7 @@ To illustrate this behaviour we define two functions: T and Runem.
 	        (print (wait .5))))) ; wait half a second
 
 (defun Runem (N)
-       (setpri (peval `(T N)) 9)     ; Run T with priority 9
+       (setpri 9 (peval `(T N)))     ; Run T with priority 9
        (FOR I 1 N
        	    (print (list 'Runem I))  ; print 
 	    (wait .1)))              ; every 10th of a second
@@ -7628,25 +7628,25 @@ Setting the priority of a task
 ------------------------------
 setpri
 
-Syntax:    (setpri Task Priority)
+Syntax:    (setpri Priority Task)
 Type:      subr, task control
 Arguments: Task to set priority of
            Priority
 
-Function: Sets the priority of Task to Priority If Priority is higher
+Function: Sets the priority of Task to Priority. If Priority is higher
            (i.e. has a lower numeric value) than the priority of the
            task invoking (setpri) Task is immediately run if it is
            runnable and the interpeter has the preemption capability
-           enabled.  The first parameter Task is returned in order to
+           enabled.  The second parameter Task is returned in order to
            use the sequence (setpri (peval xxx) Priority) in functions
            such as (wait)
 	
 Returns:   Task
 
 Example:
-(setq T (setpri (peval "hello world") 10))   ;=> #<tcb:3>
+(setq T (setpri 10 (peval "hello world")))   ;=> #<tcb:3>
 (getpri T)                    ;=> 10
-(cdr (wait -1 (list (setpri (peval "hello world") 10)))) ;=> "hello world"
+(cdr (wait -1 (list (setpri 10 (peval "hello world"))))) ;=> "hello world"
 
 Sending work to a task
 ----------------------
