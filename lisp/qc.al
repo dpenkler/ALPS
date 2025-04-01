@@ -2,7 +2,8 @@
 ;;
 ;; QC simulation
 ;;
-(require 'gcd)
+(require 'gcd)  ;; for fc cf convg
+(require 'set)  ;; for suniq
 (require 'prime)
 (require 'dfns)
 
@@ -15,8 +16,7 @@
        (let* ((#IO 1)
 	      (basis '(lambda (N) (mapcar 'car (se `(aref BAL ,N) braket)))) ; get basis out of braket closure
 	      (IsUnitary '(lambda (G) ;; All gate matrices must be unitary (only constraint)
-			    (let ((N (tally G)))
-			      (onep (r '^ (r '^ (= (. '+ '* (conj (tr G)) G) (Id N))))))))
+			    (EQL (. '+ '* (conj (tr G)) G) (Id (tally G)))))
 	      ;; Helper functions
 	      (EQL (dfd (onep (r '^ (r '^ (= a w)))))) ; lisp matrix equality
 	      (mmm '(macro (L)  `(let ((R ,(car L)) (L (list ,@(cdr L))))
@@ -256,7 +256,6 @@
 ;; (adder |10100>) ;=> |10101>
 ;; (adder |11100>) ;=> |11111>
 
-
 ;;
 ;; Quantum Fourier transform
 ;;
@@ -293,7 +292,6 @@
        (let* ((#IO 0) (C (exp 2 N)) (IC (i C)))
 	 (* (/ (sqrt C)) (exp (exp (/ (% 0j2) C)) (| C (o '* IC IC))))))
 
-
 ;; (onep (r '^ (r '^ (> #CT (|(- (QC '(QFT3)) (DQFT 3))))))) ;=> t
 
 (defun PDQFT (N P)  "Generate explicit QFT matrix with phase error P%"
@@ -314,7 +312,13 @@
     (. '+ '% [-9 -11] (* (cat .5 (p SP 1) (PM N P)) (o '% [9 11] X)))))
 
 (defun TU (G Epsilon) "Unitariness test of G within Epsilon"
-  (> (|(. '+ '* (conj (tr G)) G)) Epsilon))
+       (let ((M (. '+ '* (conj (tr G)) G)))
+	 (EQL (> (| (- M (Id (tally M)))) Epsilon) 0)))
+
+;; Phase rotations are not very accurate in IEEE754
+;; (QC '(IsUnitary (DQFT 5))) ;=> nil
+;; (QC '(TU (DQFT 5) 1e-15)) ;=> t
+;; (QC '(TU (DQFT 5) 1e-16)) ;=> nil
 
 (defun MKV (n v) "Make state vector for v on n qbit reg"
        (let* ((#IO 0) (R (p (exp 2 n) 0j0))) (aset R 1j0 v) R))
@@ -322,36 +326,41 @@
 (defun QCL (V) ;; length of cycle in V cycle must start at first element
   (- (+ 1 (ind (dp 1 V) (tk 1 V))) #IO))
 
-(defun QFAC (N)
-  (let ((N2 0) (NS 1) F)
+(defun QFAC (N) ;; produce a factor of N
+  (let ((N2 0) (NS 1) (ON N) F)
+    (princl (fmt "QFactoring " N))
     (while (evenp N) (a N (/ N 2) N2 (+ N2 1))) ;; reduce N to odd
-    (cond ((onep N) (princl (fmt N2 "th power of 2")) (a F 2))
-	  ((onep (isPrime N)) (princl (fmt N " is prime"
+    (cond ((onep N) (princl (fmt ON " is " N2 "th power of 2")) (a F 2))
+	  ((onep (isPrime N)) (princl (fmt ON " =  prime " N
 				    (if (zerop N2) "" (fmt " * (exp 2 " N2 ")"))))
 			       (a F N))
 	  (t (while (null (a F (SHOR N))) (incr NS))
-	     (princl (fmt "Found result after " NS " iterations of SHOR"))))
+	     (princl (fmt "Found result after " NS " iterations of SHOR\n"
+			  ON " = " F " * " (/ ON F)))))
     F))
 
 (defun TSHOR (N) "Test Shor on products of primes less than N"
-  (let* ((P (explod (Primes N)))
-	 (Q (sort 'lt (mapcar '(lambda (x) (apply '* x)) (UCOMB P P))))
-	 (selct '(lambda (x y) (mapcan '(lambda (x) (if (a y (not y)) (list x)))x)))
-	 (evens '(lambda (x)   (selct x t))))
-    (mapcar QFAC (print (evens Q)))))
+  (let* ((P (explod (Primes N))) ;; P list of primes less than N
+	 ;; Q list of unique pair by pair products of elements of P
+	 (Q (sort 'lt (suniq (mapcar '(lambda (x) (apply '* x)) (UCOMB P P)))))
+	 F)
+    (a F (mapcar QFAC Q))
+    (mapc '(lambda (X Y) (princl (fmt X " = " Y " * " (/ X Y)))) Q F)
+    ))
 
-;; (a #WD 0)
-;; (QC '(TSHOR 10))
+;; (a #WD 0)  ;; disable watchdog
+;; (TSHOR 10) ;; test shor on the products of primes less than 10, need 6GB mem (run alps -S96)
 
 (defun PSHOR (N PertPerc) "Shor with +-PertPerc% perturbation on rotations"
        (let ((DQFT '(lambda (N) (PDQFT N PertPerc))))
 	 (SHOR N)))
 
+
+(if (HASCAPS "G") (require 'graf))
 ;;; 
 ;;; Refs: [1] Nielsen&Chuang ed 2010
-;;;       [2] Shor’s Algorithm for Factoring Large Integers Lavor (et al) 
+;;;       [2] Shor's Algorithm for Factoring Large Integers Lavor (et al)
 ;;;           arXiv:quant-ph/0303175v1
-(require 'graf)
 (defun SHOR (N) "First attempt at Shor's algorithm on odd N"
   (prog* ((#IO 0)
 	  (n (c (l 2 N)))          ;; n bits for R2
@@ -379,7 +388,7 @@
     (a R1 (/ R1 (sqrt NR)))              ;; normalise
     (a R1 (QC `(G (list ,(conj (DQFT T))) ,R1))) ;; apply inverse fft to top T bits aka R1
     (a RR (rav (QC `(meas ,R1))))                ;; measure R1
-    (plot RR)
+    (if (HASCAPS "G") (plot RR))
     (a MX (r 'c (dp 1 RR))) ;; find max peak excluding at 0
     (a P (dp 1 (k (> RR (/ MX 2)) (i T2))))  ;; peaks at P dropping first peak
     (print (list 'peaks P 'Max MX))
@@ -388,7 +397,7 @@
     (print (list (list S T2) (fc (convg (cf S T2)))))
     ;; Find period R in first convergent in the continued fraction S/T2 less than N
     (a R (ngenc '(lambda (X) (if (and (neql (car X) 1) (lt (car X) N)) (car X)))
-		     (fc(convg (cf S T2))))) ;; See [1] Theorem 5.1
+		     (fc (convg (cf S T2)))));; See [1] Theorem 5.1
     (print (list 'R R))
     (if (or (null R) (oddp R)) (return nil)) ;; Try again
     (a Y (modexp 2 (/ R 2) N))               ;; See [2] page 10
@@ -420,7 +429,6 @@
 ;; (Sbrak (QC '(Fig2 |000> (tpmm I X I)))) ;=> .7071067812*(|010> + |101>)
 ;;; Basis state |Phi> = |0>  with bit flip on second ancilla qubit 
 ;; (Sbrak (QC '(Fig2 |000> (tpmm I I X)))) ;=> .7071067812*(|001> + |110>) 
-
 
 (de Fig3 (x error)
     (G (list (CNOTOX 0 1 5)
@@ -484,12 +492,9 @@
       (terpri)
       ))
 
-
 (de CKME (x) (gt 1e-10 (| (- (K x)  (eval (I2P (TM (K x))))))))
 
-
 (de TM (R) (let* ((B (buf (p 1024 " "))) (#PF B)) (princ "(") (Sbrak R) (princ ")")  (read B)))
-
 
 (de F4p (X) (QC `(G (list (tpmm H I I) (CNOTOX 0 1 3) (CNOTOX 0 2 3)) ,X)))
 
