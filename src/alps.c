@@ -1,5 +1,5 @@
 /*                           VERSION  -8.38-                                */
-#define REV          "Time-stamp: <2025-03-06 17:06:47 dave>"
+#define REV          "Time-stamp: <2025-10-18 12:28:18 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -15353,9 +15353,9 @@ stkp +--------------+
 	    sargn(p1,i,car(parm));    /* put args from list into value slot */
 	    parm = mcdr(parm); 
 	  }
-	  sargn(p1,len-1,parm);       /* rest from list into last slot      */
-	  alps_bind(cadr(iexp), p1);/* bind parm to formal args           */
-	  iexp = cddr(iexp);        /* body                               */
+	  if (len > 0)  sargn(p1,len-1,parm); /* rest of list into last slot */
+	  alps_bind(cadr(iexp), p1);          /* bind parm to formal args    */
+	  iexp = cddr(iexp);                  /* body                        */
 	  goreto(s_evlis, s_unbind);
 	} else error(pgmr_inc,"sys_apply: fexpr exception");
 	goto alcnt;
