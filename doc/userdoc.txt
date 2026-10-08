@@ -89,7 +89,16 @@ alps: Bar                                  ; examine the value of Bar
 ; prepend the symbol Hello to the rest of the list after the first element  
 alps: (cons 'Hello (cdr Bar))  
 (Hello 2 Foo [1 2 3 4]  "polly")
-alps:
+alps: (p "Hello Polly")        ; length of a constant character vector
+[11]
+alps: (cat "Hello " "Polly")   ; concatenate two character constants
+"Hello Polly"
+alps: (mapcar 'p Bar)          ; apply the shape function (p) to each
+([] [] [3] [4] [5])            ; element of Bar
+alps: (r '+ [2 3 5 7 11 13])   ; sum of the first 6 primes
+41
+alps: (r '- -1 -2 [2 3 5 7 11 13]) ; first differences between first 6 primes
+[1 2 2 4 2]
 
 To exit the interpreter enter the expresion (quit) or send an end-of-file
 by entering the appropriate control character (control-d for most unixen).
@@ -202,7 +211,7 @@ Symbol-Value-Pairs as arguments.
 
 Syntax:    (setq Symbol-Value-Pair*)
 Arguments: Symbol-Value-Pair ::= Symbol Value
-	   Symbol:symb
+	   Symbol:sym
 The square braces around the <axis> argument in the syntax description
 of (explod) indicate that it is optional.
 
@@ -639,8 +648,8 @@ respectively of their list argument.
 (cadr ''A) ;=> A        ; second element of the list
 
 But if the quote occurs in tail of a cons it is printed as such:
-'(A.'B)           ;=> (A quote B)
-(cdr '(A.'B))     ;=> 'B
+'(A .'B)           ;=> (A quote B)
+(cdr '(A .'B))     ;=> 'B
 
 Vector Literals
 ---------------
@@ -718,7 +727,7 @@ handled as code or code can be directly manipulated as data. A
 symbolic expressions is also referred to as an S-expression or sexp.
 
 An S-epression can be a simple Atomic-expression such as a symbol or
-litteral or a list of zero or more Atomic-expressions and S-expressions.
+literal or a list of zero or more Atomic-expressions and S-expressions.
 
 In the informal BNF description of the S-expression syntax the
 following conventions are used:
@@ -731,39 +740,50 @@ with single quotes e.g. '|'
 * following a term means 0 or more occurrences of the term
 + following a term means 1 or more occurrences of the term
 Adjacent Atomic-expressions must be separated by a space unless the second
-term starts with a Special-ymbol.
+term starts with a Special-symbol.
 
 
-<S-expression>::= <Atomic-expression> | ( <S-expression>* ) |
+<S-expression>::= <Atomic-expression>   |
+                  ( <S-expression>* )   |
+		  ( <Quoted-expression> |
 		  ( <S-expression> . <S-expression> )
 				    
 <Atomic-expression>::= <Symbol>            |
+		       <Special-symbol>    |
                        <Numeric-literal>   |
 		       <Character-literal> |
-		       <Reference-literal>
+		       <Reference-literal> |
+ 		       <Numeric-vector-expression> |
+		       <Reference-vector-expression>
 
-<Symbol>::= <Prefix>+<Suffix>* | <Special-symbol>
+<Quoted-expression>::= <Quote><S-expression>
 
-<Prefix>::= <Upper-alpha> | <Lower-alpha> | <Spec-char> | <Digits>
+<Symbol>::= <Prefix>+<Suffix>*             |
+            <Digit>+<Digit-suffix>+Suffix* 
 
-<Suffix>::= <Upper-alpha> | <Lower-alpha> | <Spec-char> | <Digits> | <Quote>
+<Prefix>       ::= <Alpha> | <Spec-char> 
+
+<Suffix>       ::= <Alpha> | <Spec-char> | <Digit> | <Quote>
+
+<Digit-suffix> ::= <Alpha> | <Spec-char> | <Quote>
 
 <Spec-char>::= !|#|$|%|&|*|+|-|.|/|<|=|>|?|@|^|_|'|'|~
 
-<Special-symbol>::= "|`|:|,|;|\|(|)|'['|']'|{|}
+<Quote>::= '|`
 
-<Quote>::= '
+<Special-symbol>::= :|,
 
-<Digits        ::= 0|1|2|3|4|5|6|7|8|9
+<Digit         ::= 0|1|2|3|4|5|6|7|8|9
 <Upper-alpha>  ::= A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z
 <Lower-alpa>   ::= a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z
+<Alpha>        ::= <Upper-alpha> | <Lower-alpha>
 <Non-printable>::= \A|\B|\C|\D|\E|\F|\G|\H|\I|\J|\K|\L|\M|\N|\O|\P|
 		   \Q|\R|\S|\T|\U|\V|\W|\X|\Y|\Z|\[|\q|\]|\^|\_
 
 <Numeric-literal>::= <Number> | <Complex-number> | '[' <Numeric-literal>* ']'
 
-<Number>  ::= [<Sign>] <Digits> [[<Point>] <Digits>+]
-              [<Exponent> [<Sign>] <Digits>+]
+<Number>  ::= [<Sign>] <Digit>* [[<Point>] <Digit>*]
+              [<Exponent> [<Sign>] <Digit>+]
 <Sign     ::= +|-
 <Point>   ::= .
 <Exponent>::= e
@@ -771,15 +791,26 @@ term starts with a Special-ymbol.
 <Complex-number> ::= <Number>j<Number>
 
 <Character-literal>::= " <Chars>* "
-<Chars>::= <Printable> | <Non-printable>
+<Chars>    ::= <Printable> | <Non-printable>
 <Printable>::= <Digits>    | <Upper-alpha> | <Lower-alpha> |
 	       <Spec-char> | <Special-symbol>
 		   
 <Reference-literal>::= $'[' <S-expression>* ']'
 
-<Numeric-vector-expression> { <S-expression>* }
+<Numeric-vector-expression>::= { <S-expression>* }
 
-<Reference-vector-expression> ${ <S-expression>* }
+<Reference-vector-expression>::= ${ <S-expression>* }
+
+<Syntax-char>::= ;|\|"|(|)|'['|']'|{|}
+
+The <Syntax-char>s are used to input special constructs and have no
+representation in an S-expression as such.
+;  for comments,
+\  for non-printable characters,
+"  for strings,
+() for compound S-expressions,
+[] for numeric vectors and reference literals,
+{} for <Numeric-vector-expression>s and <Reference-vector-expression>s 
 
 The formal qualifier for an S-expression is :sexp
 
@@ -842,9 +873,9 @@ For example:
 (and A B (setq C (+ B 2))) ;=> nil ; since A has the value nil
 C ;=> nil
 
-Note the (setq) form was not evaluated because (and) is a <fsubr> that
-only evaluates as many arguments as necessary to determine the result.
-To force evaluation we can use (apply <fsubr> (list ...)):
+Note the (setq C ..) form was not evaluated because (and) is a <fsubr>
+that only evaluates as many arguments as necessary to determine the
+result.  To force evaluation we can use (apply <fsubr> (list ...)):
 
 (apply 'and (list A B (setq C (+ B 2)))) ;=> nil
 C ;=> 3       ; the (setq C ..) form was evaluated
@@ -852,6 +883,7 @@ Note we had to quote the (and) function because (apply) is a <subr>.
 
 
 User defined functions.
+----------------------
 
 There are three kinds of user defined functions:
 
@@ -876,7 +908,7 @@ situations except in the function position of an expression. In the
 latter case the function applied is always the built-in one rather than
 than the user defined one.
 
-(defun myfun (car L) (car L)) returns the car of L
+(defun myfun (car L) (car L)) ;; returns the car of L
 (car) is a built-in function.
 
 (myfun 'len '(a b c)) ;=> a
@@ -1000,13 +1032,13 @@ Returns:   describes the values returned by an application of the
 
 Standard type qualifiers for arguments have the following structure:
 
-Type-qualifier ::= Type [Structure]
+Type-qualifier ::= <Type> [<Structure>]
 
 Type  ::= any  | sexp | list | num | chr | ref | fil | buf | tcb
 any   ::= sexp | list | num  | chr | ref 
 sexp  ::= Symbolic-expression
 list  ::= ( Symbolic-expression* )
-symb  ::= symbol
+sym   ::= symbol
 num   ::= numeric   atom
 chr   ::= character atom
 ref   ::= reference atom
@@ -1022,7 +1054,6 @@ matrix     ::= array with exactly 2 dimensions
 vector     ::= array with exactly 1 dimension
 singleton  ::= <vector> of length 1 | <scalar>
 scalar     ::= a single value with no dimensions (only exists for num)
-any        :: array | scalar
 
 For the examples in this section following variable bindings are
 assumed to be in effect:
@@ -1042,7 +1073,7 @@ Syntax:   (atom arg)
 Type:     subr, predicate
 Argument: arg:any 
 Funtion:  Tests whether its single argument is an atom.
-Returns:  t if arg is an atom, otherwise nil
+Returns:  t if <arg> is an atom, otherwise nil
 
 Examples:
 (atom A)   ;=> t
@@ -1059,7 +1090,7 @@ Syntax:   (null arg)
 Type:     subr, predicate
 Argument: arg:any
 Funtion:  Tests whether its single argument is nil.
-Returns:  t if arg is nil, otherwise =>nil
+Returns:  t if <arg> is nil, otherwise =>nil
 
 Example:
 (null nil) ;=> t
@@ -1078,7 +1109,7 @@ Syntax:   (consp arg)
 Type:     subr, predicate
 Argument: arg:any
 Funtion:  Tests whether its single argument refers to a cons cell.
-Returns:  t if arg is a cons cell, otherwise =>nil
+Returns:  t if <arg> is a cons cell, otherwise =>nil
 
 Example:
 (consp A)   ;=> nil
@@ -1104,8 +1135,8 @@ cons
 Syntax:  (cons arg1 arg2)
 Type:    subr, constructor
 Arguments: arg1:any arg2:any
-Funtion: Creates a cons cell initialising the head field to arg1 and the
-         tail field to arg2.
+Funtion: Creates a cons cell initialising the head field to <arg1> and the
+         tail field to <arg2>.
 Returns: New initialised cons cell
 
 Example:
@@ -1151,8 +1182,7 @@ Arguments: arg:any
            argument.
 
            (list* arg1 arg2 ... <argn>) is equivalent to
-	   (cons arg1 (cons arg2 (cons ... (cons <argn-1>
-	   <argn>)...)))
+	   (cons arg1 (cons arg2 (cons ... (cons <argn-1> <argn>)...)))
 
 Returns: The created list. If list* is given only one argument that
          argument is returned.
@@ -1168,13 +1198,13 @@ Examples:
 
 Creating a list of pairs
 ------------------------
-pairls
+pairlis
 
 Syntax:    (pairlis arg1 arg2 [arg3])
 Type:      subr, constructor
 Arguments: arg1:list
 	   arg2:list
-	   arg3:any
+	   arg3:list <association list> | nil
 	   
 Function: (pairlis) is used to construct a so called association list
           from its two list arguments. An association list is list of
@@ -1205,11 +1235,12 @@ Syntax: (acons arg1 arg2 arg3)
 Type:   subr, constructor
 Arguments: arg1:any
            arg2:any
-           arg2:any
+           arg3:any
 Function: It is the equivalent of (cons (cons arg1 arg2) arg3)
 Returns: A structure of two cons cells where the car of the first cell
-references the second cell whose car references arg1 and whose cdr
-references arg2. arg3 is referenced by the cdr of the first cell.
+         references the second cell whose car references <arg1> and
+         whose cdr references <arg2>. <arg3> is referenced by the cdr of
+         the first cell.
 
 Example:
 (acons 'a 'b 'c)        ;=> ((a . b) . c)
@@ -1256,10 +1287,9 @@ Examples:
 
 Accessing cons elements
 -----------------------
-These functions access the heads and tails of cons cells.
+Discussion: These functions access the heads and tails of cons cells.
 Composition variants allow access up to the third level of
 indirection. 
-
 
 
 car
@@ -1269,7 +1299,7 @@ Type:     subr, accessor
 Argument: arg:sexp
 
 Function: Returns the head of the Cons Cell referred to by arg.
-          If  arg is not a Cons Cell it returns nil.
+          If arg is not a Cons Cell it returns nil.
 
 cdr
 
@@ -1278,7 +1308,7 @@ Type:     subr, accessor
 Argument: arg:sexp
 
 Function: Returns the tail of the Cons Cell referred to by arg.
-          If  arg is not a Cons Cell it returns nil.
+          If arg is not a Cons Cell it returns nil.
 
 caar
 
@@ -1299,7 +1329,7 @@ cdar
 Syntax:   (cdar arg)
 Type:     subr, accessor
 Argument: arg:sexp
-Function: This is equivalent of (cdr (car <arg))
+Function: This is equivalent of (cdr (car arg))
 
 cddr
 
@@ -1327,10 +1357,10 @@ Basic Conditional expression
 cond
 
 Syntax:    (cond <clause>*)
-Type:      fsubr, programme execution flow
-Arguments: <clause> := (<predicate> <action>*)
-	   <predicate>:sexp 
-	   <action>:sexp
+Type:      fsubr, programme control
+Arguments: clause ::= (<predicate> <action>*)
+	   predicate:sexp 
+	   action:sexp
 Function:  The <predicate> of each <clause> is evaluated until either
 	   one <predicate> evaluates to t or there is no further
 	   <clause>. The <action> expressions following the
@@ -1357,8 +1387,8 @@ Alternate: 'arg
 Type:      fsubr, special 
 Arguments: arg:sexp
 	   Any arguments after the first are ignored.
-Function:  None, it is used to suppress the evaluation of arg when
-           used in the argument list of an subr or expr.
+Function:  None, it is used to suppress the evaluation of <arg> when
+           used in the argument list of an <subr> or <expr>.
 Returns:   arg
 
 
@@ -1385,13 +1415,13 @@ Assigning a value to a symbol both arguments evaluated
 ------------------------------------------------------
 set
 
-Syntax:    (set <symbol> <value>)
+Syntax:    (set symbol value)
 Type:      fsubr, binding
-Arguments: <symbol>:sexp
-	   <value>:sexp
-Function: Assigns the result of evaluating the <value> expression
-	  to the symbol resulting from the evaluation of the <symbol>
-	  expression. 
+Arguments: symbol:sexp
+	   value:sexp
+Function:  Assigns the result of evaluating the <value> expression
+	   to the symbol resulting from the evaluation of the <symbol>
+	   expression. 
 Returns:   The result of the evaluation of the <value> expression.
 
 Example:
@@ -1403,21 +1433,23 @@ Assigning values to unevaluated symbols
 setq
 a
 
-Syntax:    (setq <Symbol-Value-Pair>+)
-Alternate: (a <Symbol-Value-Pair>+)
+Syntax:    (setq Symbol-Value-Pair+)
+Alternate: (a Symbol-Value-Pair+)
 Type:      fsubr, binding
-Arguments: <Symbol-Value-Pair> := <symbol> <value> 
-	   <symbol>:symbol
-	   <value>:sexp
+Arguments: Symbol-Value-Pair ::= symbol value 
+	   symbol:sym
+	   value:sexp
 Function:  Operates on each <Symbol-Value-Pair> in turn from left to
            right assigning the result of evaluating the <value>
 	   expression to the <symbol> on its left. 
-Returns:   The result of the evaluation of the last value expression.
+Returns:   The result of the evaluation of the last <value> expression.
 
 Note: The synonym for setq which is the single letter a (for assign)
-       is used in the default supplied #DX prompt-read-eval-print
-       expression to allow assignment without printing the result
-       as some results may be large arrays.
+       can be used in the default supplied #DX prompt-read-eval-print
+       expression to allow assignment without printing the result if
+       it is the last function evaluated on an input line. This is 
+       as some results may be large arrays. To defeat the non-printing
+       of the result you can use (arg (a ...))
 
 Example dialog:
 (setq A 1 B 3) ;=> 3
@@ -1430,10 +1462,10 @@ Assigning an unevaluated value to an unevaluated symbol
 -------------------------------------------------------
 setqq
 
-Syntax:    (setqq <symbol> <value>)
+Syntax:    (setqq symbol value)
 Type:      fsubr, binding
-Arguments: <symbol>:symbol
-	   <value>:any
+Arguments: symbol:sym
+	   value:any
 Function:  Assigns to <symbol> <value>.
 Returns:   <value>.
 
@@ -1448,13 +1480,13 @@ Creating a closure
 ------------------
 fun
 
-Syntax:    (fun <function>)
+Syntax:    (fun function)
 Type:      fsubr, binding
 Arguments: The <function> argument must be a primitive, <expr>, <fexpr>
 	   or macro expression or a symbol that is bound to one of
 	   these.
 Function:  Creates a closure which is a funarg triple
-	   (fnarg <function> #<env>) where #<env> denotes that
+	   (fnarg <function> #<env>) where #<env> denotes the
 	   captured binding environment at the time of the
 	   application of fun. The <function> argument is evaluated
 	   until an applicable function is found.
@@ -1482,66 +1514,91 @@ Defining an expr
 ----------------
 de
 
-Syntax:    (de <name> <arglist> <body>)
+Syntax:    (de name arglist body)
 Type:      fsubr, binding
-Arguments: <name>:sym name of function to be defined.
-           <arglist>:list a list of zero or more symbols corresponding
-	   to the formal arguments.
-	   <body>:<sexp>+ sequence of zero or more expressions
+Arguments: name:sym
+	   This wil be the name of the defined function.
+	   <name> cannot be the name of a built-in primitive.
+	   arglist:lst
+	   A list of zero or more symbols corresponding to the formal
+	   arguments.
+	   body:sexp+
+	   A sequence of zero or more expressions
 
 Function:  Binds a lambda expression with formal arguments <arglist>
            with <body> to the symbol <name> in the current binding
-           environment. It is entirely equivalent to:
-	   (setq <name> (cons 'lambda (cons <arglist> <body>))) apart
-           from some error checking. 
+           environment. Apart from some error checking it is
+           equivalent to:
+	   (setq <name> (cons 'lambda (cons '<arglist> 'bodyl>)))
+           where <bodyl> is the list of <S-expressions> in <body>.
 
 Returns:   <name>
 
 Examples:
 (de Pyth (X Y) (sqrt (+ (sqr X) (sqr Y)))) ;=> Pyth
-(Pyth 9 12) ;=> 15
-; traditional lisp function for defining functions (included in prims.al)
+(Pyth 9 12) ;=> 15  ;; Applying the function
+Pyth ;=> (lambda (X Y) (sqrt (+ (sqr X) (sqr Y)))) ;; Value of symbol Pyth
+
+;; (defun) is the traditional lisp function for defining functions
+;; is included in lisp/prims.al
 (setq defun 'de)                ;=> de
 (defun aPyth (X Y) (dist X Y))  ;=> aPyth
 (aPyth [3 9] [4 12])            ;=> [5 15]
+(setq bPyth (cons 'lambda (cons '(X Y) '((dist X Y))))) ;; equivalent
+(equal aPyth bPyth) ;=> t
 
 Defining a fexpr
 ----------------
 df
 
-Syntax:    (df <name> <arglist> <body>)
+Syntax:    (df name arglist body)
 Type:      fsubr, binding
-Arguments: <name>:sym name of the fexpr to be defined
-           <arglist>:list a list of zero or more symbols corresponding
+Arguments: name:sym name of the fexpr to be defined
+           arglist:lst a list of zero or more symbols corresponding
 	   to the formal arguments.
-	   <body> sequence of zero or more expressions
+	   Body:sexp+ sequence of zero or more expressions
 
 Function:  Binds a fexpr with the formal arguments <arglist>
            and body <body> to the symbol <name> in the current binding
-           environment. It is entirely equivalent to:
-	   (setq <name> (cons 'fexpr (cons <arglist> <body>))) apart
-           from some error checking.
+           environment. Apart from some error checking it is
+           equivalent to:
+	   (setq <name> (cons 'fexpr (cons '<arglist> '<bodyl>)))
+           where <bodyl> is the list of <S-expressions> in <body>.
 
 Returns:   <name>
 
 Example:
+;; Define a shorthand function $ to retun a lambda expression
+(df $ (a b) (list* 'lambda a b))
+;; Applying the defined fexpr 
+($(A B C) (+ 10 A B C)) ;=> (lambda (A B C) (+ 10 A B C))
+;; Appling the result of applying the fexpr
+(($(A B C) (+ 10 A B C)) 1 2 3) ;=> 16
+;; Applying the explicit lambda expression
+((lambda (A B C) (+ 10 A B C)) 1 2 3) ;=> 16
+
+In general <fexpr>'s are useful when we need to define functions that
+get their arguments un-evaluated. See the discussion in "User defined
+functions" 
+
 
 Defining a macro
 ----------------
 dm
 
-Syntax:    (dm <name> <arglist> <body>)
+Syntax:    (dm name arglist body)
 Type:      fsubr, binding
-Arguments: <name>:sym name of the macro to be defined
-           <arglist>:list a list of zero or more symbols corresponding
+Arguments: name:sym name of the macro to be defined
+           arglist:list a list of zero or more symbols corresponding
 	   to the formal arguments.
-	   <body> sequence of one or more expressions
+	   body:sexp+ sequence of one or more expressions
 
 Function:  Binds a macro expression with formal arguments <arglist>
            with <body> to the symbol <name> in the current binding
-           environment. It is entirely equivalent to:
-	   (setq <name> (cons 'macro (cons <arglist> <body>))) apart
-           from some error checking.
+           environment. Apart from some error checking it is
+           equivalent to:
+	   (setq <name> (cons 'macro (cons '<arglist> '<bodyl>)))
+           where <bodyl> is a list of <S-expressions> in <body>.
 
 Returns:   <name>
 
@@ -1552,14 +1609,14 @@ Defining a function with lexical scoping
 ----------------------------------------
 dc
 
-Syntax: (dc (<name> <args>) <body>)
+Syntax: (dc (name args) body)
 Type:      fsubr, binding
-Arguments: <name>:sym name of the function to be defined
-           <args>:sym* zero or more symbols corresponding to the
+Arguments: name:sym name of the function to be defined
+           args:sym* zero or more symbols corresponding to the
 	   formal arguments.
-	   <body>:sexp*  sequence of one or more  expressions
+	   body:sexp*  sequence of one or more  expressions
 
-Function:  Binds a lambda expression with formal arguments <arglist>
+Function:  Binds a lambda expression with formal arguments <args>
            with <body> to the symbol <name> in the current binding
            environment. Furthermore it captures the current
            environment in a closure that is used whenever the function
@@ -1582,10 +1639,10 @@ Defining a constant
 -------------------
 defconst
 
-Syntax:     (defconst <name> <value>)
+Syntax:     (defconst name value)
 Type:       fsubr,binding
-Arguments:  <name>:sym a variable symbol excluding built-in function names
-            <value>:sexp expression
+Arguments:  name:sym a variable symbol excluding built-in function names
+            value:sexp expression
 
 Function: The expression <value> is evaluated and the result assigned
           to the symbol <name> in the global environment. Other
@@ -1597,7 +1654,7 @@ Function: The expression <value> is evaluated and the result assigned
           <name> is shadowed in the same way as any other symbols in
           the global environment.
 
-Returns:    <name>
+Returns:  <name>
 
 Example:
 (defconst H '(hello polly))  ;=> H
@@ -1622,8 +1679,8 @@ apply
 Syntax: (apply function args+ last-arg)
 Type: subr, evaluation
 Arguments: function:<subr>|<fsubr>|<expr>|<fexpr>|<macro>
-           args:sexpr
-	   last-arg:lst
+           args:sexp
+	   last-arg:lst a list of <S-expressions>
 
 Function: Applies <function> to the evaluated arguments.
 	  Each <arg> is passed as a separate argument to
@@ -1643,11 +1700,11 @@ Calling the evaluator
 ---------------------
 eval
 
-Syntax: (eval <expression> [<bindings>])
+Syntax: (eval expression [bindings])
 Type: subr, evaluation
-Arguments: <expression>:sexpr
-           <bindings>:association list of symbol-value pairs |
-	              environment from a funarg triple (see (fun))
+Arguments: expression:sexpr
+           bindings:association list of symbol-value pairs |
+	            environment from a funarg triple (see (fun))
 
 Function: Evaluates <expression>.
           If the <bindings> argument is not provided the evaluation
@@ -1670,7 +1727,7 @@ Function: Evaluates <expression>.
 	  If <bindings> is an environment from a funarg triple, the
 	  current bindings are undone down to the point where the
 	  environment was captured. Then the bindings from the
-	  environment are added before evalution <expression>. After
+	  environment are added before evaluting <expression>. After
 	  evaluation the bindings from the environment are removed and
 	  all the bindings of the current environment are restored.
 	  
@@ -1711,38 +1768,40 @@ let*
 Syntax:    (let  Varlist Body)
 	   (let* Varlist Body)		
 Type:      fsubr, binding
-Arguments: Varlist ::= ( Variable-Declaration* )
-	   Variable-Declaration ::= Symbol | ( Symbol [S-Expression] )
+Arguments: Varlist ::= ( Variable-declaration* )
+	   Variable-declaration ::= Symbol | ( Symbol [S-Expression] )
 	   Body ::= S-Expression*
 
-Function:  When the let form is evaluated first each
-	   Variable-Declaration is evaluated in turn. For (let) the
+Function:  When the (let) form is evaluated first each
+	   <Variable-declaration> is evaluated in turn. For (let) the
 	   variables are bound to the environment only after every
-	   Variable-declaration has been evaluated. For (let*) on
+	   <Variable-declaration> has been evaluated. For (let*) on
 	   the other hand binding takes place progressively with each 
-	   Variable-Declaration evaluated.
+	   <Variable-declaration> evaluated.
 
-           In the evaluation of a Variable-declaration (Symbol
-	   S-Expression) the result of evaluating the S-Expression is
-	   bound to the Symbol. If there is no S-Expression nil is
-	   bound to the Symbol. When the binding of a
-	   Variable-Declaration has been added to the environment,
-	   subsequent references to its <symbol> withing the scope of
+           In the evaluation of a <Variable-declaration> (Symbol
+	   S-Expression) the result of evaluating the <S-Expression> is
+	   bound to the <Symbol>. If there is no <S-Expression>, nil is
+	   bound to the <Symbol>. When the binding of a
+	   <Variable-declaration> has been added to the environment,
+	   subsequent references to its <Symbol> within the scope of
 	   the (let[*]) return the associated value.
 
-	   Once every <variable declaration> has been evaluated and
+	   Once every <Variable-declaration> has been evaluated and
 	   bound to the environment each expression in the body is
 	   evaluated in turn. For all <S-Expressions> except the last in
 	   Body the only effect they can have on the computation
 	   is through side effects such as the assigning of values to
-	   variables.  When control exits the (let[*]) the <variable
+	   variables.  When control exits the (let[*]) the <Variable-
 	   declaration> bindings are undone and the environment is
 	   restored to the same state as when the (let[*]) was
 	   entered. Note assignments to free variables in body are not
 	   undone.
 
-Returns:  The value of evaluating the last <expression> is returned.
-          If there are no <expressions> in the body nil is returned.
+Returns:  The value of evaluating the last <S-expression> in <Body>
+	  is returned. If there are no <S-xpressions> in the body
+	  nil is returned.
+
 
 General programme execution flow
 --------------------------------
@@ -1758,11 +1817,11 @@ If condition then else
 ----------------------
 if
 
-Syntax: (if <predicate> <true-expression> <else-expressions-list>)
+Syntax: (if predicate true-expression else-expressions-list)
 Type:  fsubr, program execution flow
-Arguments: <predicate>:sexp
-           <true_expression>:sexp
-	   <else-expression-list>:sexp*
+Arguments: predicate:sexp
+           true_expression:sexp
+	   else-expression-list:sexp*
 
 Function: The <predicate> is evaluated and if the result is non-nil
 	  the <true-expression> is evaluated and the result returned
@@ -1792,13 +1851,13 @@ When condition then
 -------------------
 when
 
-Syntax: (when <predicate> <predicate-true-expression-list>)
+Syntax: (when predicate predicate-true-expression-list)
 Type:  fsubr, program execution flow
-Arguments: <predicate>:sexp
-           <predicate_true_expression-list>:sexp*
+Arguments: predicate:sexp
+           predicate_true_expression-list:sexp*
 
 Function: The <predicate> is evaluated and if the result is non-nil
-	  the sexp's in the  <predicate_true_expression-list> are
+	  the sexp's in the <predicate_true_expression-list> are
 	  evaluated.
 
 cond form:   (cond (<predicate> <predicate-true-expression-list>))
@@ -1818,17 +1877,17 @@ Unless condition then
 ---------------------
 unless
 
-Syntax: (unless <predicate> <predicate-false-expression-list>)
+Syntax: (unless predicate predicate-false-expression-list)
 Type:  fsubr, program execution flow
-Arguments: <predicate>:sexp
-           <predicate-false-expression-list>:sexp*
+Arguments: predicate:sexp
+           predicate-false-expression-list:sexp*
 
 Function: The <predicate> is evaluated and if the result is nil
 	  the sexp's in the  <predicate-false-expression-list> are
 	  evaluated.
 	  
 cond form:  (cond (<predicate> nil)
-                  (t <predicate-true-expression-list>))
+                  (t <predicate-false-expression-list>))
 
 Returns: If the <predicate> evaluates to nil the value of the
          last sexp evaluated in  <predicate-false-expression-list> is
@@ -1850,10 +1909,10 @@ These are convenience functions to facilitate porting of code from
 procedural languages.
 
 while
-Syntax: (while <predicate> <body>)
+Syntax: (while predicate body)
 Type: fsubr, program execution flow
-Arguments: <predicate>:sexp
-           <body>:sexp*
+Arguments: predicate:sexp
+           body:sexp*
 
 Function: While <predicate> evaluates to non-nil the sexp's of <body>
           are evaluated in order. When <predicate> evaluates to nil
@@ -1873,10 +1932,10 @@ A 2
 
 
 repeat
-Syntax: (repeat <predicate> <body>)
+Syntax: (repeat predicate body)
 Type: fsubr, program execution flow
-Arguments: <predicate>:sexp
-           <body>:sexp*
+Arguments: predicate:sexp
+           body:sexp*
 
 Function: To start the sexp's of <body> are evaluated in order
 	  followed by the evaluation of <predicate>. If it evaluates
@@ -1887,6 +1946,8 @@ Function: To start the sexp's of <body> are evaluated in order
 Returns: If the body is not nil the value of the last sexp evaluated in
  	 the body is returned otherwise it returns t.
 
+Examples:
+---------
 (let ((A 3)) (repeat (eq A 0) (prin0 'A) (print A) (a A (- A 1))))
 A 3
 A 2
@@ -1905,24 +1966,24 @@ avoids the need to test for specific return conditions in the functions
 in the invoked chain of functions.
 
 catch
-Syntax: (catch <tag> <body>)
+Syntax: (catch tag body)
 Type: fsubr, program execution flow
-Arguments: <tag>:sym
-           <body>:sexp+
+Arguments: tag:sym
+           body:sexp+
 
 Function: Associates the <tag> symbol with the the return point of the
           catch function, then the sexp's of <body> are evaluated in
           turn.
 	  
-Returns: If no (throw <tag> <exp>) is evaluated in the <body> the
+Returns: If no (throw tag exp) is evaluated in the <body> the
 	 the value of the last sexp in <body> is returned.
-	 Otherwise if a (throw <tag> <exp>) is evaluated the result of
+	 Otherwise if a (throw tag exp) is evaluated the result of
 	 evaluating <exp> is returned.
 	 
 throw
-Syntax: (throw <tag> <exp>
-Arguments: <tag>:sym
-           <exp>:sexp
+Syntax: (throw tag exp)
+Arguments: tag:sym
+           exp:sexp
 
 Function: Evaluates <exp> and transfers control to the end of the
           catch with a corresponding <tag>. If no catch is found with a
@@ -1945,16 +2006,28 @@ Generating a user error
 -----------------------
 error
 
-Syntax: (error <string>)
+Syntax: (error string)
 Type:   subr, control
-Arguments: <string>:chr
-Function:
+Arguments: string:chr
+Function: Signals a user defined error user_err printing out the
+	  supplied <string>.
+Returns: Does not return
+
+Example:
+========
+
+(a Filename 123)
+(if (not (chrp Filename))
+    (error "File name not a character string"))
+User defined error: File name not a character string
+Trapped out back to main
+ 
 
 Call with current continuation
 ------------------------------
 cwcc
 
-Syntax:    (cwcc <lambda-expression>)
+Syntax:    (cwcc lambda-expression)
 Type:      subr, control
 Arguments: The <lambda-expression> is any function taking a single
            argument.
@@ -1976,52 +2049,131 @@ Example:
 ; third argument of + and assigned to the symbol K. As the lambda
 ; expression returned C the value of the whole expression is
 ; unchanged.
-(K C)    ;=> 15
-(a C 30) 
-(K C)    ;=> 42
-(a A 10) 
-(K C)    ;=> 42   
+(K C)    ;=> 15  ;; Invoking the continuation with C
+(a C 30)         ;; Change the value of C
+(K C)    ;=> 42  ;; Invoking the continuation with changed C
+(a A 10)         ;; Change the value of A
+(K C)    ;=> 42  ;; No change 
 ; Changing the value of A has no effect since A had already been
 ; evaluated at the point of call
 (a E 50)
-(K C)    ;=> 87  ; (+ 1 2 30 4 50) => 87
-(K -15)  ;=> 42
+(K C)    ;=> 87  ;; (+ 1 2 30 4 50) ;=> 87
+(K -15)  ;=> 42  ;; (+ 1 2 -15 4 50) ;=> 42
 
-Catching errors
+Continuations can be useful for implementing co-routines.
+
+Catching errors 
 ---------------
-condition-case
+cc
 
-Syntax: (condition-case <var> <body> <handlers>+)
-handlers: (<error> <handler_body>)
+AKA:       condition-case
+Syntax:    (cc Var Body Handlers+)
+Type:      fsubr, programme control
+Argumants: Var:sym
+           Body:sexp
+	   Handlers ::= (<Error> <Handler-body>)
+           Handler-body:sexp*
+	   Error is one of the symbols in the first column:
+	   	 unb_sym     "Unbound symbol"                  
+		 inv_sym     "Invalid symbol"                  
+		 inv_exp     "Invalid expression"              
+		 inv_fun     "No such function defined"        
+		 inv_numarg  "Wrong number of arguments"       
+		 inv_funarg  "Improper function argument"      
+		 dom_range   "Domain / Range error"            
+		 sys_cor     "System tables corrupted"         
+		 con_ass     "Invalid assignment target"       
+		 not_imp     "Feature not implemented"         
+		 bad_num     "Bad numeric constant"            
+		 bad_str     "Bad string constant"             
+		 bad_vec     "Bad vector"                      
+		 no_files    "No available file attachments"   
+		 inv_funame  "Not a proper function name"      
+		 ios_err     "Input/Output/OS error"           
+		 bad_file    "File/Directory not found"        
+		 sys_par     "System parameter out of bounds"  
+		 pgmr_inc    "Programmer incompetence detected"
+		 user_err    "User defined error"              
+		 user_int    "User interrupt"                  
+		 sys_int     "System interrupt"                
+		 any_err     "Any error"
 
-Where error is one of:
+Function:  It evaluates <Body> and if no error occurs it returns
+           normally. If an error occurs during the evaluation of <Body>
+           the list of <Handlers> is examined to look for an entry
+           corresponding to the <Error> that occured. The appropriate
+           <Handler-body> is evaluated with <Var> bound to the error
+           message corresponding to the error that occurred.  A
+           catch-all error any_err will match any error. If no
+           matching entry is found the system will trap out of the
+           function.
 
-unb_sym     "Unbound symbol"                  
-inv_sym     "Invalid symbol"                  
-inv_exp     "Invalid expression"              
-inv_fun     "No such function defined"        
-inv_numarg  "Wrong number of arguments"       
-inv_funarg  "Improper function argument"      
-dom_range   "Domain / Range error"            
-sys_cor     "System tables corrupted"         
-con_ass     "Invalid assignment target"       
-not_imp     "Feature not implemented"         
-bad_num     "Bad numeric constant"            
-bad_str     "Bad string constant"             
-bad_vec     "Bad vector"                      
-no_files    "No available file attachments"   
-inv_funame  "Not a proper function name"      
-ios_err     "Input/Output/OS error"           
-bad_file    "File/Directory not found"        
-sys_par     "System parameter out of bounds"  
-pgmr_inc    "Programmer incompetence detected"
-user_err    "User defined error"              
-user_int    "User interrupt"                  
-sys_int     "System interrupt"                
+Returns: If the evaluation of <Body> does not generate an error the
+          return value is the result of evaluating the last form of
+          <Body>. If an error occurs and an appropriate Handler is
+          found the return value is the result of evaluating the last
+          form of the corrensponding <Handler-body>, otherwise the
+          system traps the error and no value is returned.
 
-unwind-protect
+Examples:
 
-Syntax: (unwind-protect <bodyform> <unwindforms>+)
+(cc V (du  "/etc/issue") (any_err (princl (list 'help V)) 'ok))
+
+Welcome to \s \r \m (\l)
+
+;=>t
+
+(cc V (du  "ASAF") (bad_file (princl (list 'help V)) 'ok))
+(help (bad_file . Open failed on file "ASAF"))
+;=>ok
+
+(cc V (du  "ASAF") (any_err (princl (list 'help V)) 'ok))
+(help (bad_file . Open failed on file "ASAF"))
+;=>ok
+
+(cc V (du  "ASAF") (inv_funarg (princl (list 'help V)) 'ok))
+File/Directory not found: Open failed on file "ASAF"
+(du "ASAF")
+Trapped out back to main
+	  
+	  
+Cleaning up after errors
+------------------------
+uwp
+
+AKA:       unwind-protect
+Syntax:    (uwp Body Unwindforms)
+Type:      fsubr, programme control
+Arguments: Body:sexp
+	   Unwindforms:sexp*
+
+Function: uwp evaluates <Body> followed by the <Unwindforms>. If an
+	  error occurs during the evaluation of <Body> the remaining
+	  forms in <Body> are ignored but the <Unwindforms> are still
+	  evaulated.  This function is useful when clean up functions
+	  (the <Unwindforms>) need to be performed even when an error
+	  occurs. For example if in <Body> some physical output is
+	  enabled which should be disabled once the evaluation of
+	  <Body> has been completed, this can be done in the
+	  <Unwindforms> once for both the normal and error cases.
+
+Returns:   If <Body> is evaluated without error the returned value is
+	   the result of evaluating the last form of <Body>. Otherwise
+	   an error is signalled and there is no return value.
+
+Examples:
+
+(uwp (let () (princl "Start drill") (+ 3 4)) (princl "Stop drill"))
+Start drill
+Stop drill
+;=>7
+
+(uwp (let () (princl "Start drill") (+ 3 4 x)) (princl "Stop drill"))
+Start drill
+Unbound symbol: x
+(+ 3 4 x)
+Stop drill
+Trapped out back to main
 
 
 The prog feature
@@ -2047,35 +2199,35 @@ prog*
 Syntax:    (prog  Varlist Body)
 	   (prog* Varlist Body)		
 Type:      fsubr, binding, program control
-Arguments: Varlist ::= ( Variable-Declaration* )
-           Variable-Declaration ::= Symbol | (Symbol [S-Expression])
-	   Body       ::= Statement*
-	   Statement  ::= [Label] Expression
-	   Label      ::= Symbol
-	   Expression ::= S-Expression
+Arguments: Varlist ::= ( Variable-declaration* )
+           Variable-declaration ::= sym | (sym [sexp])
+	   Body ::= Statement*
+	   Statement ::= [Label] Expression
+	   Label:sym
+	   Expression:sexp
 
 Function:  When the prog construct is evaluated first each
-	   Variable-Declaration is evaluated in turn. For (prog) the
+	   <Variable-declaration> is evaluated in turn. For (prog) the
 	   variables are bound to the environment only after every
 	   Variable-declaration has been evaluated. For (prog*) on
 	   the other hand binding takes place progressively with each 
-	   Variable-Declaration evaluated.
+	   <Variable-Declaration> evaluated.
 
-           In the evaluation of a Variable-declaration 
-	   (Symbol  S-Expression) the result of evaluating the S-Expression is
-	   bound to the Symbol. If there is no S-Expression nil is
-	   bound to the Symbol. When the binding of a
-	   Variable-Declaration has been added to the environment,
-	   subsequent references to its <symbol> withing the scope of
+           In the evaluation of a <Variable-declaration> (Symbol
+	   S-Expression) the result of evaluating the <S-Expression>
+	   is bound to the <Symbol>. If there is no <S-Expression> nil is
+	   bound to the <Symbol>. When the binding of a
+	   <Variable-declaration> has been added to the environment,
+	   subsequent references to its <Symbol> within the scope of
 	   the (prog[*]) return the associated value.
 
-	   Once every <variable declaration> has been evaluated and
-	   bound to the environment the <expression> of each statement
-	   is evaluated in turn. For all <statements> except the last
-	   in the body or <statements> invoking (return) the only
+	   Once every <Variable-declaration> has been evaluated and
+	   bound to the environment the <Expression> of each statement
+	   is evaluated in turn. For all <Statements> except the last
+	   in the body or <Statements> invoking (return) the only
 	   effect they can have on the computation is through side
 	   effects such as the assigning of values to variables.  When
-	   control exits the (prog[*]) the <variable declaration>
+	   control exits the (prog[*]) the <Variable-declaration>
 	   bindings are undone and the environment is restored to the
 	   same state as when the (prog[*]) was entered. Note
 	   assignments to free variables in body are not undone.
@@ -2088,6 +2240,8 @@ Returns:  If a (return) form is evaluated the resulting value of that form is
 
 Examples:
 
+See exmples of the prog related control mechanisms: (return) and (go).
+
 
 Returning from a prog
 ---------------------
@@ -2095,13 +2249,24 @@ return
 
 Syntax:    (return [Value])
 Type:      subr, program control
-Argument:  Value ::= S-Expression (optional)
+Argument:  Value:sexp (optional)
 Function:  Exits the innermost active (prog[*]) invocation. If there
            is no active (prog[*]) invocation an error is signaled.
-Returns:   (eval Value) to the form invoking the innermost active
-	   (prog[*]) construct.
+Returns:   (eval Value) or nil  to the form invoking the innermost
+	   active (prog[*]) construct.
 
 Example:
+;; We define a function to look for an atom in a list.
+(defun Find (X L) ;; Looking for element X in list L
+  (prog ()
+  	(while L
+	    (if (eq X (car L))
+	    	(return L))  ;; on match return the remaining list
+	    (a L (cdr L))))) ;; move to next element of the list
+;=> Find	    
+
+(Find 'd '(a b c d e f g)) ;=> (d e f g)
+(Find 'z '(a b c d e f g)) ;=> nil
 
 
 Moving control about in prog contructs
@@ -2109,17 +2274,17 @@ Moving control about in prog contructs
 
 go
 --
-Syntax:   (go <target>)
+Syntax:   (go target)
 Type:     subr, program control
-Argument: <target>:sexp :=> sym|ref
-Function: Transfers control to the Expression part of the Statement
+Argument: target:sexp :=> sym|ref
+Function: Transfers control to the <Expression> part of the <Statement>
 	  within the innermost active (prog[*]) construct
-	  where (eq Label (eval <target>) => t
-	  If no matching Label is found an error is signaled.
+	  where (eq <Label> (eval <target>) => t
+	  If no matching <Label> is found an error is signaled.
 	  If (eq (eval <target>) $[]) => t then control simply passes to
 	  the statement after the (go <target>) in the prog[*] body.
 	  
-Returns:   none
+Returns:  None
 
 Note: The (go) form can only be evaluated within the (dynamic)
       scope of a prog.  Difference with Lisp1.5: The argument is
@@ -2161,7 +2326,8 @@ A   (unless L (return V))
 (defun Len (L)
   (let ((V 0))
        (while L
-              (a L (cdr L) V (+ 1 V)))))
+              (a L (cdr L) V (+ 1 V)))
+	      V)) ;; return V
 ;=> Len
 (Len '(a b c d e f)) ;=> 6
 
@@ -2180,19 +2346,19 @@ A   (unless L (return V))
 ; Contrived computed goto example
 ;
 (defun ComputedGoto (X)
-  (prog (R (#IO 1) (Home 'Out))
+  (prog (R (#IO 1))
   	(if (or (lt X 1) (gt X 3)) (return "rubbish"))
 	(go (aref $[L1 L2 L3] X)) ; computed goto
 	(error "never reached")
    L1   (a R 'one)
-	(go Home)
+	(go 'Out)
    L2   (a R 'two)
-	(go Home)
+	(go 'Out)
    L3   (a R 'three)
    Out  R))
 => ComputedGoto
 
-(mapcar ComputedGoto '(0 3 1 2 4)) => ("rubbish" three one two  "rubbish")
+(mapcar ComputedGoto '(0 3 1 2 4)) ;=> ("rubbish" three one two  "rubbish")
 	
 ;
 ; Typical APL usage using compress (k) on statement label
@@ -2204,16 +2370,18 @@ A   (unless L (return V))
 	   $[LOOP]))
     R)) 
 => Gcd
-; while the shape of V is greater than 1 the reference vector $[LOOP]
-; is not compressed. When the shape of V is 1 then k compresses out
-; the single element of $[LOOP] making the empty reference vector $[]
-; and the result R is returned.
-; (go $[]) is equivalent to a nop (no operation).
+
+; while 1 is less than the shape of V, the reference vector $[LOOP]
+; is not compressed. When the shape of V is 1 then outermost k
+; compresses out the single element of $[LOOP] making the empty
+; reference vector $[] and the result R is returned.  (go $[]) is
+; equivalent to a nop (no operation).
 
 
 (Gcd [30 75 105]) ;=> 15
 (Gcd [26 91])     ;=> 13
-
+(v 26 91)         ;=> 13 ;; built in gcd
+(v 30 75 105)     ;=> 15
 
 Type predicates
 ---------------
@@ -2260,7 +2428,7 @@ Syntax: (listp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: If arg is a cons cell or arg is null the result is t
+Function: If <arg> is a cons cell or <arg> is null the result is t
           otherwise it is nil. Equivalent to
 	   (or (consp arg) (null arg)) 
 
@@ -2274,8 +2442,8 @@ Syntax: (nlistp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: It is a built-in function for (not (listp arg)). If arg
-          is a cons cell or arg is null the result is nil otherwise
+Function: It is a built-in function for (not (listp arg)). If <arg>
+          is a cons cell or <arg> is null the result is nil otherwise
           it is t. Equivalent to
 	  (and (atom arg) (not (null arg)))
 
@@ -2289,20 +2457,20 @@ Syntax: (nump arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: If arg is a numeric scalar or array the result is t
+Function: If <arg> is a numeric scalar or array the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
 
 Testing for complex
 -------------------
-nump
+cpxp
 
 Syntax: (cpxp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: If arg is a complex scalar or array the result is t
+Function: If <arg> is a complex scalar or array the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
@@ -2315,7 +2483,7 @@ Syntax: (chrp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: If arg is a character array the result is t
+Function: If <arg> is a character array the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
@@ -2328,7 +2496,7 @@ Syntax:   (refp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
 
-Function: If arg is a reference array the result is t
+Function: If <arg> is a reference array the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
@@ -2340,7 +2508,7 @@ symbolp
 Syntax:   (symbolp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
-Function: If arg is a symbol the result is t
+Function: If <arg> is a symbol the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
@@ -2352,7 +2520,7 @@ primp
 Syntax:   (primp arg) => res
 Type:     subr, type predicate
 Argument: arg:any
-Function: If arg is the symbol of a built-in primitve the result is t
+Function: If <arg> is the symbol of a built-in primitve the result is t
 	  otherwise it is nil. 
 
 Returns: res where res is either t or nil
@@ -2374,7 +2542,7 @@ Type:     subr, value predicate
 Argument: arg:numeric singleton
           #CT comparison tolerance
 
-Function: If arg is zero the result is t otherwise it is nil.
+Function: If <arg> is zero the result is t otherwise it is nil.
 
 Returns: res where res is either t or nil
 
@@ -2405,7 +2573,7 @@ Syntax:   (onep arg) => res
 Type:     subr, value predicate
 Argument: arg:numeric singleton
 
-Function arg is compared to one using the comparison tolerance (see
+Function <arg> is compared to one using the comparison tolerance (see
          #CT). If arg is one the result is set t otherwise it is nil.
 
 Returns: res where res is either t or nil
@@ -2432,7 +2600,7 @@ Syntax:   (oddp arg) => res
 Type:     subr, value predicate
 Argument: arg:numeric singleton
 
-Function: arg is tested whether the remainder upon division by two
+Function: <arg> is tested whether the remainder upon division by two
           is one using the comparison tolerance (see #CT). If the
           remainder is one the result is t otherwise it is nil.
 
@@ -2459,7 +2627,7 @@ Syntax:   (evenp arg) => res
 Type:     subr, value predicate
 Argument: arg:numeric singleton
 
-Function: arg is tested whether the remainder upon division by two
+Function: <arg> is tested whether the remainder upon division by two
           is zero using the comparison tolerance (see #CT). If the
           remainder is zero the result is t otherwise it is nil.
 
@@ -2504,6 +2672,7 @@ For example:
 
 ; $[nil t 1 "asd"] is equivalent to $[nil t t t]
 ; #IO is the index origin which can be 0 or 1.
+; In practise this is rarely if ever needed.
 
 Lisp Logical operators
 ----------------------
@@ -2589,7 +2758,7 @@ For example:
   (=  'abc  "abc") ;=> [1 1 1]
   (eq [1 2] [1 2]) ;=> nil
   (=  [1 2] [1 2]) ;=> [1 1]
-However for convenience alps also defines (eql)
+However for convenience of comparing arrays you can use (eql)
   (eql 'c  "c")     ;=> t
   (eql 'abc "abc")  ;=> t
   (eql "abc" "abc") ;=> t
@@ -2600,7 +2769,7 @@ Testing for equality
 
 Discussion:
 
-There three lisp primitives for testing the equality of two
+There three lisp primitives for testing for the equality of two
 objects. They are: (eq), (eql) and (equal), each with differing
 semantics:
 
@@ -2638,21 +2807,20 @@ Object equality
 eq
 
 Syntax: (eq arg1 arg2)
- Where arg1 and arg2 are of any type.
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: For all cases except scalar arguments and character
-	  singletons, eq tests whether the object referred to by
-	  arg1 is the *same* object as that refered to by
-	  arg2. For scalar arguments the comparison is made between
+	  singletons, (eq) tests whether the object referred to by
+	  <arg1> is the *same* object as that refered to by
+	  <arg2>. For scalar arguments the comparison is made between
 	  the value of the arguments using the comparison tolerance
 	  (see #CT). All symbols, null vectors and character
 	  signletons have a single unique representation in the
 	  system thus they are always (eq) no matter how they are
 	  referenced.
 
-Returns:  t if arg1 is (eq) to arg2 else nil.
+Returns:  t if <arg1> is (eq) to <arg2> else nil.
 
 Examples:
 
@@ -2681,28 +2849,28 @@ Not eq
 ne
 
 Syntax: (ne arg1 arg2)
- Where arg1 and arg2 are of any type.
-
 Type: subr, lisp relational operator
+Arguments: arg1:any
+	   arg2:any
+Function: Returns t if <arg1> is not eq to <arg2> else nil. The
+ 	  implementation is equivalent to (not (eq arg1 arg2))
 
-Function: Returns t if arg1 is not eq to arg2 else nil. The implementation
-	   is equivalent to (not (eq arg1 arg2))
 
 Vector equality
 ---------------
 eql
 
 Syntax: (eql arg1 arg2)
-  Where arg1 and arg2 are of any type.
-
-Type: subr, lisp relational operator
-
+Type:      subr, lisp relational operator
+Arguments: arg1:any
+	   arg2:any
 Function: If the arguments are of type numeric, character or
            reference and of the same type the comparison proceeds on
            an element by element basis regardless of the shape of the
            arguments. For numeric arguments the comparison tolerance
-           is used (see #CT). For reference arguments if the elements
-           refer to the same object they are considered to be eql.
+           is used (see #CT). For reference arguments if each of the
+	   corresponding elements of <arg1> and <arg2> refer to the
+	   same object they <arg1> and <arg2>are considered to be eql. 
 
 Returns:   Returns t if they refer to the same lisp object.
 	   For numeric, character or reference arguments returns t if
@@ -2719,7 +2887,7 @@ Compatibility Note:
            Emacs eql does not compare the contents of strings
 	   	  Emacs: (eql "asd" "asd")  => nil
          	  alps:  (eql "asd" "asd")  => t
-          
+
 Examples:
 
 (equal $[a (a b c) c] $[a (a b c) c]) ;=> t   ; equal digs into lists
@@ -2727,7 +2895,10 @@ Examples:
 (setq L '(a b c (d e) f))   ;=> '(a b c (d e) f)
 ${'a L 'c}                  ;=> $[a (a b c (d e) f) c]
 (eql ${'a L 'c} ${'a L 'c}) ;=> t ; L is a list and it is the same object
-(eql $[1 b cd] $[1 b cd])   ;=> t ; scalar and symbols
+(eql $[1 b cd] $[1 b cd])   ;=> t ; 1 is unique and symbols
+ (eql $[1 b a] ${(+ 1 0) 'b 'a}) ;=> nil ; (+ 1 0) =>1 is a different object
+(eql $[1 2 3] $[1 2 3])     ;=> nil ;; elements 2 and 3 are different
+                                    ;; objects in the 2 arguments
 (eql $["abc" d ef] $["abc" d ef]) ;=> nil 
      ;;; "abc" are different objects in the reference vector arguments
      ;;; however
@@ -2739,23 +2910,37 @@ ${'a L 'c}                  ;=> $[a (a b c (d e) f) c]
 (eql $["ab" "b"] $["ab" "b"])     ;=> nil
      ;;; eql compares the elements in the reference arrays using (eq)
 
+Vector inequality
+-----------------
+neql
+
+Syntax: (neql arg1 arg2)
+Type:      subr, lisp relational operator
+Arguments: arg1:any
+	   arg2:any
+Function: Equivalent to (not (eql arg1 arg2))
+
+Returns: Returns t if they refer to different lisp objects or for
+	 numeric, character or reference arguments returns t if one
+	 or more of the corresponding elements of <arg1> and <arg2>
+	 are (neq) else nil. 
+	  
 List and vector element equality
 --------------------------------
 equal
 
 Syntax: (equal arg1 arg2)
-  Where arg1 and arg2 are of any type.
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: If the arguments are of type numeric, character or
            reference and of the same type the comparison proceeds on
            an element by element basis. For numeric arguments the
            comparison tolerance is used (see #CT). For reference
            arguments the relational operator (equal) is used as
            elements can also be lists. If the arguments are lists each
-           element in arg1 is compared to its corresponding element
-           in arg2 using (equal). 
+           element in <arg1> is compared to its corresponding element
+           in <arg2> using (equal). 
 
 Returns:   For list arguments returns t if all their corresponding
            atoms are (equal) else nil.
@@ -2791,11 +2976,10 @@ Not equal
 nequal
 
 Syntax: (nequal arg1 arg2)
- Where arg1 and arg2 are of any type.
-
 Type: subr, lisp relational operator
-
-Function: Returns t if arg1 is not (equal) to arg2 else nil. 
+Arguments: arg1:any
+	   arg2:any
+Function: Returns t if <arg1> is not (equal) to <arg2> else nil. 
 	   It is equivalent to (not (equal arg1 arg2))
 
 
@@ -2804,22 +2988,20 @@ Less than
 lt
 
 Syntax: (lt arg1 arg2)
-  Where arg1 and arg2 are numeric or character atoms of the same
-  type. The comparison tolerance is used for numeric arguments (see #CT).
-
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: The comparison is made on an element by element
-           basis. Where the number of elements in arg1 and arg2
+           basis. Where the number of elements in <arg1> and <arg2>
            differ, missing elements are taken to have a value lower
            than the lowest element of the type. The shape of the
-           arguments is not taken into account.
-
-Returns:  t if all elements in arg1 are less than or equal to the
-	  their corresponding elements in arg2 and at least one
-	  element in arg1 is less than its corresponding element in
-	  arg2 else the result is nil.
+           arguments is not taken into account.  The comparison
+	   tolerance is used for numeric arguments (see #CT).
+	   
+Returns:  t if all elements in <arg1> are less than or equal to the
+	  their corresponding elements in <arg2> and at least one
+	  element in <arg1> is less than its corresponding element in
+	  <arg2> else the result is nil.
 
 Examples:
 
@@ -2838,21 +3020,18 @@ Less than or equal
 le
 
 Syntax: (le arg1 arg2)
- 
-  Where arg1 and arg2 are numeric or character atoms of the same
-  type.  The comparison tolerance is used for numeric arguments (see
-  #CT).
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: The comparison is made on an element by element
-           basis. Where the number of elements in arg1 and arg2
+           basis. Where the number of elements in <arg1> and <arg2>
            differ, missing elements are taken to have a value lower
            than the lowest element of the type. The shape of the
-           arguments is not taken into account.
+           arguments is not taken into account. The comparison
+	   tolerance is used for numeric arguments (see  #CT). 
 
-Returns:  t if all elements in arg1 are less than or equal to the
-	  their corresponding elements in arg2 else the result is nil.
+Returns:  t if all elements in <arg1> are less than or equal to the
+	  their corresponding elements in <arg2> else the result is nil.
 
 Examples:
 
@@ -2873,21 +3052,18 @@ Greater than or equal
 ge
 
 Syntax: (ge arg1 arg2)
- 
-  Where arg1 and arg2 are numeric or character atoms of the same
-  type.  The comparison tolerance is used for numeric arguments (see
-  #CT).
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: The comparison is made on an element by element
-           basis. Where the number of elements in arg1 and arg2
+           basis. Where the number of elements in <arg1> and <arg2>
            differ, missing elements are taken to have a value lower
            than the lowest element of the type. The shape of the
-           arguments is not taken into account.
+           arguments is not taken into account. The comparison
+	   tolerance is used for numeric arguments (see #CT).  
 
-Returns:  t if all elements in arg1 are greater than or equal to the
-	  their corresponding elements in arg2 else the result is nil.
+Returns:  t if all elements in <arg1> are greater than or equal to the
+	  their corresponding elements in <arg2> else the result is nil.
 
 Examples:
 (ge 2 1)                           => t
@@ -2907,21 +3083,20 @@ Greater than
 gt
 
 Syntax: (gt arg1 arg2)
-  Where arg1 and arg2 are numeric or character atoms of the same
-  type. The comparison tolerance is used for numeric arguments (see #CT).
-
 Type: subr, lisp relational operator
-
+Arguments: arg1:any
+	   arg2:any
 Function: The comparison is made on an element by element
-           basis. Where the number of elements in arg1 and arg2
+           basis. Where the number of elements in <arg1> and <arg2>
            differ, missing elements are taken to have a value lower
            than the lowest element of the type. The shape of the
-           arguments is not taken into account.
+           arguments is not taken into account.The comparison
+	   tolerance is used for numeric arguments (see #CT). 
 
-Returns:  t if all elements in arg1 are greater than or equal to the
-	  their corresponding elements in arg2 and at least one
-	  element in arg1 is strictly greater than its corresponding
-	  element in arg2 else the result is nil. 
+Returns:  t if all elements in <arg1> are greater than or equal to the
+	  their corresponding elements in <arg2> and at least one
+	  element in <arg1> is strictly greater than its corresponding
+	  element in <arg2> else the result is nil. 
 
 
 Examples:
@@ -2942,7 +3117,7 @@ List processing
 
 Testing whether an element is a member of a list. There are two
 functions that can be used: (memq) and (member). The former tests for
-membership using (eq) which is more effiecient while the latter uses
+membership using (eq) which is more efficient while the latter uses
 (equal). See the discussion on "Testing for equality".
 
 Quick Member
@@ -2959,37 +3134,54 @@ Returns: If <element> is found in <set> (memq) returns a reference to
           the remainder of <set> of which <element> is the first
           element. Otherwise it returns nil.
 
+Examples:
+
+(memq 3 '(1 2 3 4 5 6)) ;=> (3 4 5 6)
+(memq [3 4] '([1 2] [3 4] [5 6])) ;=> nil
+(memq 'c '(a b c d e)) ;=> (c d e)
+(memq "ab" '("aa" "ab" "ac")) ;=> nil ;; strings longer than 1 are
+                                      ;; always different objects
+(memq '(a b) '((a b) (c d) (e f))) ;=> nil				      
+
 
 Member
 ------
 member
 
 Syntax: (member <element> <set>)
+Type: subr, list processing
 Arguments: <element>:<any>
   	   <set>:list
-Type: subr, list processing
 
 Function: Searches the list <set> for the first car that is (equal) to <element>
 
-Returns: If <element> is found in <set> (member) returns a reference to
-          the rest of <set> of which <element> is the first
-          element. Otherwise it returns nil.
+Returns: If <element> is found in <set> (member) returns a reference
+         to the rest of <set> of which <element> is the first
+         element. Otherwise it returns nil.
+
+Examples:
+
+(member [3 4] '([1 2] [3 4] [5 6])) ;=> ([3 4] [5 6])
+(member 'c '(a b c d e)) ;=> (c d e)
+(member "ab" '("aa" "ab" "ac")) ;=> ("ab" "ac")
+(member '(a b) '((a b) (c d) (e f)))  ;=> ((a b) (c d) (e f))
+(member '(b c) '((a b) (c d) (e f)))  ;=> nil
 
 Position of an sexpr in a list
 ------------------------------
 pos
 
-Syntax: (pos <element> <set>)
-  Where <element> is an atom or list
-  and <set> is a list.
-Type: subr, list processing
+Syntax:    (pos <element> <set>)
+Type:      subr, list processing
+Arguments: <element>:any
+  	   <set>:list
 
 Function: Searches the list <set> for the first car that is (equal) to
           <element> counting the elements skipped.
 
 Returns: If <element> is found in <set> (pos) returns a scalar
-          corresponding to the count of elements skipped.
-	  Otherwise it returns [].
+         corresponding to the count of elements skipped.
+	 Otherwise it returns [].
 
 Note: This is not compatible with (position) in common Lisp which
 returns nil if <element> does not occur within <set>. Since [] is
@@ -3013,16 +3205,21 @@ Testing for subset
 ------------------
 subset
 
-Syntax: (subset arg1 arg2)
-Type: subr, list processing
+Syntax:    (subset arg1 arg2)
+Type:      subr, list processing
 Arguments: arg1:lst
-           arg2 lst
+           arg2:lst
 
-Function: Tests whether all the elements of arg1 are contained in arg2
+Function: Tests whether all the elements of <arg1> are (eq) to some
+          elements of <arg2>.
 
-Returns: Returns t if all elements of arg1 are contained in arg2 else
-nil.
+Returns: Returns t if all elements of <arg1> are contained in <arg2> else
+         nil.
 
+Examples:
+
+(subset '(a b e)       '(b a (c d) e)) ;=> t
+(subset '(a b (c d) e) '(b d (c d) e)) ;=> nil
 
 Symbol operations
 -----------------
@@ -3031,9 +3228,9 @@ Testing whether a symbol has a value
 ------------------------------------
 boundp
 
-Syntax:   (boundp <symbol>)
+Syntax:   (boundp symbol)
 Type:     subr, symbol op
-Argument: <symbol>:<sym>
+Argument: symbol:<sym>
 
 Returns: t if the argument <symbol> is bound to a value in the current
          environment, else nil.
@@ -3050,9 +3247,9 @@ Creating a Symbol from a string
 -------------------------------
 intern
 
-Syntax:    (intern <string>)
+Syntax:    (intern string)
 Type:      subr,symbol op
-Argument:  <string>:chr a character vector containing a valid symbol
+Argument:  string:chr a character vector containing a valid symbol
            name.
 
 Function: If a symbol with a name equal to <string> does not already
@@ -3070,7 +3267,7 @@ gensym
 
 Syntax: (gensym)
 Type:   subr,symbol op
-Implicit argument: #GS:<chr>
+Implicit argument: #GS:chr vector
 
 Where: #GS is bound to a character vector of which the first element
        must be an upper or lower case alphabetic character (A-Z,a-z),
@@ -3112,6 +3309,9 @@ Example:
 ;=> gensym Improper function argument: #GS would wrap
 #GS  ;=> "z9"
 
+(gensym) is useful for generating symbols. The generated symbols can
+be used just like any other symbol.
+
 Property lists
 --------------
 
@@ -3129,17 +3329,20 @@ remprop: removes a property
 Note that these functions are all subr's, i.e. they evaluate all their
 arguments.
 
-Addinng or modifying a property
--------------------------------
+Adding or modifying a property
+------------------------------
 put
 
-Syntax: (put <symbol> <property> <value>)
+Syntax: (put symbol property value)
 Type: subr,symbol op
+Arguments: symbol:sym
+           property:sexp
+	   value:sexp
 
 Function: If the <property> does not exist on the property list of
            <symbol> the <property> with its associated value is added
            to the <symbol>'s property list, otherwise the previous value
-           associated with the property is replaced with <value>.
+           associated with the <property> is replaced with <value>.
 
 Returns:  <value>
 
@@ -3154,12 +3357,15 @@ Getting a symbol property
 -------------------------
 get
 
-Syntax: (get <symbol> <property>)
+Syntax: (get symbol property)
 Type: subr, symbol op
-
+Arguments: symbol:sym
+           property:sexp
 Function: Retrieves the value associated with <property> on
-	   <symbol>. 
-
+	   <symbol>. Note that <property> in (get) must refer
+	   to the same object as <property> in (put) in order
+	   to retrieve that property value.
+	   
 Returns: If the <property> is found on the <symbols>'s property list
 	 the associated value is returned otherwise the function
 	 returns nil.
@@ -3171,15 +3377,23 @@ Examples: Assume that examples above for (put) have been entered then
 (get 'Fred 'Height)  => 1.79
 (get 'Fred 'Consort) => Suzi
 (get 'Fred 'Friends) => (Tom Dick Harry)
+Further
+(put 'Fred '(a b) '(c d e)) ;=> (c d e)
+(get 'Fred '(a b)) ;=> nil ;; because the list '(a b) is different
+     	       	       	   ;; from that in the (put)
+(put 'Fred (a A '(a b)) '(c d e)) ;=> (c d e) ;; capture the list in A
+A ;=> (a b)
+(get 'Fred A) ;=> (c d e)
 
 
 Removing a property
 -------------------
 remprop
 
-Syntax: (remprop <symbol> <property>)
+Syntax: (remprop symbol property)
 Type: subr, symbol op
-
+Arguments: symbol:sym
+           property:sexp
 Function: Removes the the <property> from  <symbol>. 
 
 Returns: t if successful otherwise returns nil.
@@ -3196,27 +3410,84 @@ Arithmetic
 These functions are convenience functions that complement the APL
 arithmetic functions.
 
+Increment the value of a Symbol
+-------------------------------
 incr
 
-sqr
+Syntax: (incr symbol)
+Type:  fsubr, apl extension
+Argument: symbol:sym Must have a numeric scalar or array as value
 
+Function: Adds 1 to each element of the value of <symbol>
+          Equivalent to (a <symbol> (+ 1 <symbol>))
+
+Return: Returns the incremented value.
+
+Example
+
+(a A 0)
+(incr A) ;=> 1
+(incr A) ;=> 2
+A ;=> 2
+
+Decrement the value of a Symbol
+-------------------------------
+decr
+
+Syntax: (decr symbol)
+Type:  fsubr, APL extension
+Argument: symbol:sym Must have a numeric scalar or array as value
+
+Function: Subrtracts 1 from each element of the value of <symbol>
+          Equivalent to (a <symbol> (- <symbol> 1))
+
+Return: Returns the decremented value.
+
+Example
+
+(a A 1)
+(decr A) ;=> 0
+(decr A) ;=> -1
+A ;=> -1
+
+Square root
+-----------
 sqrt
 
+Syntax: (sqrt arg)
+Type: subr, APL extension
+Argument: arg:num scalar | array
+Function: Takes the square root of each element of <arg>.
 
+Return: Result of the same shape as <arg> where each element in the
+        result is the square root of the corresponding element in
+        <arg>.
+
+Examples
+
+(sqrt [ 4  9 16 25])  ;=> [2 3 4 5]
+(sqrt [-4 -1 0 1 4]) ;=> [0j2 0j1 0j0 1j0 2j0]
+(de sqr (x) (* x x)) ;=> sqr
+(sqr [0j2 0j1 0j0 1j0 2j0]) ;=> [-4j0 -1j0 0j0 1j0 4j0]
+;; Taking the real part
+(% 9 (sqr [0j2 0j1 0j0 1j0 2j0])) ;=> [-4 -1 0 1 4]
+
+Modular exponentiation
+----------------------
 modexp
 
 Syntax:    (modexp base arg mod)
-Type:      subr, aplex
-Arguments: base: numeric singleton
-           arg: numeric array
-	   mod: numeric singleton
+Type:      subr, APL extension
+Arguments: base:num singleton
+           arg:num scalar | array
+	   mod:num singleton
 
 Function: A slightly more accurate and efficient implementation of
           modular exponentiation.
 
-Returns: numeric array with the same shape as arg where each element
-         is the result of taking the xth power of base modulo mod,
-         where x is the element of arg corresponding to the resulting
+Returns: numeric array with the same shape as <arg> where each element
+         is the result of taking the xth power of <base> modulo <mod>,
+         where x is the element of <arg> corresponding to the resulting
          element of the result. (modexp B E M) => (| M (exp B E))
 
 Examples: #IO ;=> 0
@@ -3230,22 +3501,37 @@ Integer part of a number
 ------------------------
 
 int
-Syntax: (int <val>array:num)
+Syntax: (int arg)
+Type: subr, APL extension
+Argument: arg:num scalar | array
 
 
-Returns: An array of the same shape as val where each element is the
-integer part of the corresponding element in val. If val is complex
+Returns: An array of the same shape as <arg> where each element is the
+integer part of the corresponding element in <arg>. If <arg> is complex
 the integer part of only the real part is returned.
 
-This function differes from the APL floor function (f) which returns
+This function differs from the APL floor function (f) which returns
 the smallest integer less than or equal to the argument.
 
 (f -1.4)   ;=> -2
 (int -1.4) ;=> -1
 
-Example: 
---------
-    (int (/ (p [10 10] (- 50 (i 100))) 10)) ;=>
+Examples
+
+(setq #IO 0) ;=> 0
+(setq A (/ (p [10 10] (- 50 (i 100))) 10)) ;=>
+[ 5  4.9  4.8  4.7  4.6  4.5  4.4  4.3  4.2  4.1
+  4  3.9  3.8  3.7  3.6  3.5  3.4  3.3  3.2  3.1
+  3  2.9  2.8  2.7  2.6  2.5  2.4  2.3  2.2  2.1
+  2  1.9  1.8  1.7  1.6  1.5  1.4  1.3  1.2  1.1
+  1   .9   .8   .7   .6   .5   .4   .3   .2   .1
+  0  -.1  -.2  -.3  -.4  -.5  -.6  -.7  -.8  -.9
+ -1 -1.1 -1.2 -1.3 -1.4 -1.5 -1.6 -1.7 -1.8 -1.9
+ -2 -2.1 -2.2 -2.3 -2.4 -2.5 -2.6 -2.7 -2.8 -2.9
+ -3 -3.1 -3.2 -3.3 -3.4 -3.5 -3.6 -3.7 -3.8 -3.9
+ -4 -4.1 -4.2 -4.3 -4.4 -4.5 -4.6 -4.7 -4.8 -4.9]
+
+(int A) ;=>
 [ 5  4  4  4  4  4  4  4  4  4
   4  3  3  3  3  3  3  3  3  3
   3  2  2  2  2  2  2  2  2  2
@@ -3257,35 +3543,65 @@ Example:
  -3 -3 -3 -3 -3 -3 -3 -3 -3 -3
  -4 -4 -4 -4 -4 -4 -4 -4 -4 -4]
 
+(int [1.2j3.4 -5.6j7.8]) ;=> [1 -5]
+
+
 Fractional part of a number
 ---------------------------
 
 frc
-Syntax: (frc <val>array:num)
+Syntax: (frc arg)
+Type: subr, APL extension
 
-Returns: An array of the same shape as val where each element is the
-fractional part of the corresponding element in val. If val is complex
+Returns: An array of the same shape as <arg> where each element is the
+fractional part of the corresponding element in <arg>. If <arg> is complex
 the fractional part of only the real part is returned.
 
+Examples
 
-Example:
---------
-    (frc (/ (p [10 10] (- 50 (i 100))) 10)) ;=>
-[ .9  .8  .7  .6  .5  .4  .3  .2  .1  0
-  .9  .8  .7  .6  .5  .4  .3  .2  .1  0
-  .9  .8  .7  .6  .5  .4  .3  .2  .1  0
-  .9  .8  .7  .6  .5  .4  .3  .2  .1  0
-  .9  .8  .7  .6  .5  .4  .3  .2  .1  0
- -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9 -0
- -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9 -0
- -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9 -0
- -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9 -0
- -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9 -0]
+(setq #IO 0) ;=> 0
+(setq A (/ (p [10 10] (- 50 (i 100))) 10)) ;=>
+[ 5  4.9  4.8  4.7  4.6  4.5  4.4  4.3  4.2  4.1
+  4  3.9  3.8  3.7  3.6  3.5  3.4  3.3  3.2  3.1
+  3  2.9  2.8  2.7  2.6  2.5  2.4  2.3  2.2  2.1
+  2  1.9  1.8  1.7  1.6  1.5  1.4  1.3  1.2  1.1
+  1   .9   .8   .7   .6   .5   .4   .3   .2   .1
+  0  -.1  -.2  -.3  -.4  -.5  -.6  -.7  -.8  -.9
+ -1 -1.1 -1.2 -1.3 -1.4 -1.5 -1.6 -1.7 -1.8 -1.9
+ -2 -2.1 -2.2 -2.3 -2.4 -2.5 -2.6 -2.7 -2.8 -2.9
+ -3 -3.1 -3.2 -3.3 -3.4 -3.5 -3.6 -3.7 -3.8 -3.9
+ -4 -4.1 -4.2 -4.3 -4.4 -4.5 -4.6 -4.7 -4.8 -4.9]
+
+(frc A) ;=>
+[ 0  .9  .8  .7  .6  .5  .4  .3  .2  .1
+  0  .9  .8  .7  .6  .5  .4  .3  .2  .1
+  0  .9  .8  .7  .6  .5  .4  .3  .2  .1
+  0  .9  .8  .7  .6  .5  .4  .3  .2  .1
+  0  .9  .8  .7  .6  .5  .4  .3  .2  .1
+  0 -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9
+ -0 -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9
+ -0 -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9
+ -0 -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9
+ -0 -.1 -.2 -.3 -.4 -.5 -.6 -.7 -.8 -.9]
+ 
+(frc [1.2j3.4 -5.6j7.8]) ;=> [.2 -.6]
+
 
 Test for integer
 ----------------
-
 intp
+
+Syntax: (intp arg)
+Type: subr, APL extension
+Argument: arg:num scalar | array
+Function: Each element of <arg> is tested whether it is an integer.
+          If <arg> is complex only the real part is tested.
+
+Return: The result has the same shape as <arg> where each element of
+        the result is 1 or zero according as the corresponding element
+	of arg is an integer or not.
+
+Examples:
 
 (intp (/ (p [10 10] (i 100)) 10))
 [0 0 0 0 0 0 0 0 0 1
@@ -3298,11 +3614,76 @@ intp
  0 0 0 0 0 0 0 0 0 1
  0 0 0 0 0 0 0 0 0 1
  0 0 0 0 0 0 0 0 0 1]
-(see pyth.al)
+(see lisp/pyth.al)
+
+(intp [1j2 3.4j5.6]) ;=> [1 0]
+
+(intp (+ 1 1e-15)) ;=> 0
+
+(intp (+ 1 1e-16)  ;=> 1
 
 APL Functions
+-------------
 
-The primitive polyadic functions
+Discussion:
+These are the standard APL primitive functions as defined in the early
+APL implementation with the adoption of some features from more modern
+dialects. 
+
+XXX
+
+The scalar primitive polyadic functions are:
++    Addition
+-    Subtraction
+*    Multiplication
+/    Division
+l    Logarithm
+exp  Exponentiation
+|    Abs / Modulus
+!    Factorial / Binomial coefficients
+%    Pi times /  Trigonometric, Hyperbolic, Pythagorean and
+                 Complex number functions
+f    Floor / Minimum
+c    Ceil / Maximum
+dist Euclidean Distance
+^    Logical and / Lowest common multiple
+~^   Logical nand
+v    Logical inclusive or / Greatest common divisor
+~v   Logical inclusive nor
+x    Logical exclusive or
+
+The scalar primitive relational function are:
+<   Less than
+<=  Less than or equal
+=   Equal
+>=  Greater than or equal
+>   Greater than
+
+The primitive mixed functions are:
+i     Index generator
+ind   Index of
+elt   Array membership
+p     Shape / reshape
+rank  Rank of an array
+tally Size of dimension 2 of an array
+rav   Ravel - unravel an array into a vector
+cat   Concatenate arrays
+?     Deal - random numbers
+r     Reduce operator on array with scalar primitive
+s     Scan operator on array with scalar primitive
+o     Outer product operator on arrays with scalar primitive
+.     Inner product operator on arrays with scalar primitive
+k     Compress
+ex    Expand
+tk    Take
+dp    Drop
+rot   Rotate
+shft  Shift
+tr    Transpose
+gup   Sorting increasing order
+gdn   Sorting decreasing order
+enc   Encode
+dec   Decode
 
 Arity>2 case
 
@@ -3315,7 +3696,7 @@ to all arguments. For example:
 
 
 Conformance of arguments
-Shape of result: all args scalar -> scalar, any arg vect -> vect
+Shape of result: all args scalar -> scalar, any arg arry -> array
 
 (+ 1 2)    => 3
 (+ 1 [2])  => [3]
@@ -3392,16 +3773,6 @@ All array arguments must have the same shape.
 (p res) => [] for no or all scalar args
         => (p non-scalar-arg)
 
-Euclidean Distance
-------------------
-dist
-
-
-(dist arg1 arg2) ;=> (sqrt (+ (sqr arg1) (sqrarg2)))
-(dist 3 4)                 ;=> 5
-(dist [3 6] [4 8])         ;=> [5 10]
-(dist [3 6] [4 8] [13 15]) ;=> [14 18]
-(dist [5 10] [13 15])      ;=> [14 18]
 
 Multiplication / Signum
 -----------------------
@@ -3426,6 +3797,26 @@ Returns:   <res>
 Division
 --------
 /
+
+
+Logarithm
+---------
+Symbol: l
+
+Monadic
+
+Function:  Natural logarithm
+Syntax:    (l arg) => <res>
+Type:      subr,prim
+Arguments: arg:numeric
+
+Function: Each element in <res> is set to the natural logarithm 
+	   (log to the base e) of the corresponding element in arg.
+
+Returns:   <res>
+	   Where (eql (p    arg) (p    <res>)) => t
+	   and   (eql (rank arg) (rank <res>)) => t
+
 
 Exponentiation
 --------------
@@ -3586,25 +3977,6 @@ Examples:
 ; (rad) (deg) and (atan) are defined in lisp/trig.al
 
 
-
-Logarithm
----------
-Symbol: l
-
-Monadic
-
-Function:  Natural logarithm
-Syntax:    (l arg) => <res>
-Type:      subr,prim
-Arguments: arg:numeric
-
-Function: Each element in <res> is set to the natural logarithm 
-	   (log to the base e) of the corresponding element in arg.
-
-Returns:   <res>
-	   Where (eql (p    arg) (p    <res>)) => t
-	   and   (eql (rank arg) (rank <res>)) => t
-
 Floor / Minimum
 ---------------
 Symbol: f
@@ -3643,6 +4015,18 @@ Returns:   <res>
 	   Where (eql (p    arg) (p    <res>)) => t
 	   and   (eql (rank arg) (rank <res>)) => t
 
+Euclidean Distance
+------------------
+dist
+
+
+(dist arg1 arg2) ;=> (sqrt (+ (sqr arg1) (sqrarg2)))
+(dist 3 4)                 ;=> 5
+(dist [3 6] [4 8])         ;=> [5 10]
+(dist [3 6] [4 8] [13 15]) ;=> [14 18]
+(dist [5 10] [13 15])      ;=> [14 18]
+
+
 Logical and (lcm)
 -----------------
 APL logical operator
@@ -3659,7 +4043,7 @@ Syntax: (^ arg1 arg2)
 Function: If the arguments are booleans returns a the numeric result
           where each element is a 1 or 0 as a function of the truth
           table applied to the corresponding elements in arg1 and
-          arg2 otherwise the lowest common multiple is returned.
+          <arg2> otherwise the lowest common multiple is returned.
 
 Arguments: arg1:numeric, arg2:numeric
   	   arg1, arg2 can be scalar, vector or arrays
@@ -4595,7 +4979,7 @@ alps: (a #SD 12 #FW 0)
   9  81  729  6561  59049  531441  4782969  43046721  387420489  3486784401
  10 100 1000 10000 100000 1000000 10000000 100000000 1000000000 10000000000]
 
-; Compute the outer product wrt <  of (i 10) and (i 10)produces an
+; Compute the outer product wrt <  of (i 10) and (i 10) produces an
 ; upper triangular matrix with the diagonal elements equal to zero.
 
 (o '< (i 10) (i 10)) ;=>
@@ -5193,9 +5577,21 @@ Encode (Representation of a number in a base)
 ---------------------------------------------
 enc
 
-Syntax: (enc Base Value)
-
+Syntax: (enc <Base> <Values>)
+Type:     subr, APL mixed function
+Arguments: <Base>:num, [scalar | vector]
+           The base for encoding Value
+	   <Values>:numeric, [scalar | array]
+	   The values to encode.
 Function: The result is the representation of <Values> in base <Base>
+          If (a R (enc Base Values)) then
+	  (eql (| (r '* A) (- B (dec A R))) (p (p B) 0)) => t
+	  If all the values of <Base> are equal (i.e. single radix
+	  representation) then if <Base> has not enough elements to
+	  represent the largest element of <Values> then the most
+	  significant elements of the result will be truncated.
+	  (eql (p R) (cat (p Base) (p Values))) => t
+	  
 
 Example:
 To represent the decimal value 23 in binary:
@@ -5210,23 +5606,66 @@ Different values of the base radices can be used. For example converting
 seconds to days, hours, minutes and seconds:
 
 (enc [7 24 60 60] 3723)  => [0 1 2 3] = 1 hour, 2 minutes and 3 seconds
-(enc [7 24 60 60] 93784) => [1 2 3 4] = 1 day, 2 hours, 3 minutes and 4 seconds
+(enc [7 24 60 60] 93784) => [1 2 3 4] = 1 day, 2 hours, 3 minutes and
+                                        4 seconds
 
+Or number of yards, feet and inches in a given number of inches
+(enc [1780 3 12] 126) ;=> [3 1 6]
+
+Or Stones, Pounds and ounces in a given number of ounces
+(enc [2 14 16] 255) ;=> [1 1 15]
+
+
+(enc (p 3 10) (p [2 5] (+ 990 (i 10)))) ;=>
+[9 9 9 9 9
+ 9 9 9 9 0
+ 
+ 9 9 9 9 9
+ 9 9 9 9 0
+ 
+ 1 2 3 4 5
+ 6 7 8 9 0]
+
+(p (enc (p 3 10) (p [2 5] (+ 990 (i 10))))) ;=> [3 2 5]
+
+(tr (enc (p 3 10) (p [2 5] (+ 990 (i 10))))) ;=>
+[9 9 1
+ 9 9 6
+ 
+ 9 9 2
+ 9 9 7
+ 
+ 9 9 3
+ 9 9 8
+ 
+ 9 9 4
+ 9 9 9
+ 
+ 9 9 5
+ 0 0 0]
+
+;; Note the value 1000 was truncated to 0 0 0 since we only encoded
+;; for 3 digits.
 
 Decode using base value
 -----------------------
 dec
 
-Syntax: (dec base values) => res
+Syntax: (dec (<Base> <Values>) => res
 Type:   subr,
-Arguments: base:num:[vector | scalar]
-           values:num:[array | scalar]
+Arguments: <Base>:num:[vector | scalar]
+           <Values>:num:[array | scalar]
 
-Funtion: The numeric elements of <values> are evaluated according to
-         the base values in <base>. If <base> is a scalar then the
-         result is the value of a polynomial in <base> with
-         coefficients in <values>. If (lt <Values> <Base>) => t then
-         the result is the value of <Values> in base <Base>.
+Funtion: The numeric elements of <Values> are evaluated according to
+         the base values in <Base>. If <Base> is a scalar then the
+         result is the value of a polynomial in <Base> with
+         coefficients in <Values>. If (lt <Values> <Base>) => t then
+         the result is the value of <Values> in base <Base>. In
+         general if <Base> is a vector and (a R (dec Base Values))
+	 then (eql R (. '+ '* Values Weights)) => t where
+	 (a Weights (rev (s '* (rev (cat (dp 1 Base) 1)))))
+	 (eql (p R) (dp 1 (p Values))) => t.
+	 
 
 Example:
 (dec 7 [2 4 3 1]) => 904 
@@ -5239,19 +5678,19 @@ number 10111 to decimal:
 If we change the base from 2 to 10 we evaluate the decimal number 10111:
 (dec 10 [ 1 0 1 1 1]) => 10111 or (+ 1 10 100 0 10000)
 
-To convert the hexadecimal string FOFF to a number:
-(- (ind "0123456789ABCDEF" "F0FF") #IO)       ;=> [15 0 15 15]
-(dec 16 (- (ind "0123456789ABCDEF" "F0FF") #IO)) ;=> 61695
+To convert the hexadecimal string "F023" to a number:
+(- (ind "0123456789ABCDEF" "F023") #IO)       ;=> [15 0 2 3]
+(dec 16 (- (ind "0123456789ABCDEF" "F023") #IO)) ;=> 61475
 
 A function to perform hexadecimal conversion is provided in lisp/prims.al
-(hex "F0FF") ;=> 61695
+(hex "F023") ;=> 61475
 
 If <Base> is a vector:
 (dec [10 10 10] 5) ;=> 555
 
 To calculate the number of seconds in 1 hour, 2 minutes and 3 seconds:
 (dec [ 24 60 60] [1 2 3]) ;=> 3723
-Note that the value of the first element of Base does not affect the
+Note that the value of the first element of base does not affect the
 computation.
 
 The function below converts the representation of X in base B1 to base B2
@@ -5266,7 +5705,7 @@ The function R0 removes leading zeros from a vector
 (defun R0 (V) (k (s 'v (<> 0 V)) V))
 
 If both <Base> and <Values> are vectors:
-;;; make a vector of ascii values
+;;; make a vector of ascii values of a string
 (setq Data  (num "The quick brown fox.")) ;=>
 [84 104 101 32 113 117 105 99 107 32 98 114 111 119 110 32 102 111 120 46]
 ;;; decode as 16 bit (two byte) values
@@ -5565,18 +6004,18 @@ List assassins
 
 Discussion:
 
-These functions must be used with some care since they destructively modify
-list structure that is possibly referenced by other structures in the
-system.
+These functions must be used with some care since they destructively
+modify list structure that is possibly referenced (shared) by other
+structures in the system.
 
 Deleting an element from a list
 -------------------------------
 delete
 
-Syntax:    (delete arg <list>)
+Syntax:    (delete arg list)
 
 Function: scans down the top level of <list> looking for each element
-which is eq to arg removing it by linking the previous element to
+which is eq to arg and removing it by linking the previous element to
 the one after it.
 
 (setq L '(a b c (d e) f))  ;=> (a b c (d e) f)
@@ -5595,7 +6034,7 @@ Replacing the head field of a cons cell
 ---------------------------------------
 rplaca
 
-Syntax:    (rplaca <cons> arg)
+Syntax:    (rplaca cons arg)
 Function:   Replaces the head field of the <cons> argument with the
             value of arg
 Returns:    Value of arg
@@ -5610,7 +6049,7 @@ Replacing the tail field of a cons cell
 ---------------------------------------
 rplacd
 
-Syntax:    (rplacd <cons> arg)
+Syntax:    (rplacd cons arg)
 Function:   Replaces the tail field of the <cons> argument with the
             value of arg
 Returns:    Value of arg
@@ -5626,12 +6065,12 @@ Smashing lists together
 -----------------------
 nconc
 
-Syntax: (nconc <list>* [<atom>])
+Syntax: (nconc list* [atom])
 Type: subr
 
-Function: Joins the lists together by changing the last cdr of each <list> to
-	   point to the following list. nil arguments are ignored. The last
-	   argument can be an atom.
+Function: Joins the lists together by changing the last cdr of each
+	   <list> argyment to point to the following list. nil
+	   arguments are ignored. The last argument can be an atom.
 
 Example:
 (setq L '(a b c))            ;=> (a b c)
@@ -7231,7 +7670,7 @@ Arguments: <freq>:num frequency, integer from 0-63, default 5
 
 Function: If the sound subsytem in available a beep is played with
           frequency <freq>*81.38Hz for <duration> centiseconds.
-	  Otherwise the Bell character "\G" is written the the output
+	  Otherwise the Bell character "\G" is written to the output
           file.
 	  
 
@@ -7809,13 +8248,11 @@ Example:
 
 Evaluating lisp expressions from a file
 ---------------------------------------
-
 load
 
-Syntax: (load <filename>)
-
-Type: subr
-
+Syntax:    (load <filename>)
+Type:      subr, evaluation
+Arguments: <filename>:chr vector 
 Function: The lisp expressions contained in the file referred to by
           <filename> are evaluated. Results of the evaluated
           expressions are not printed unless the interpreter is in
@@ -7831,9 +8268,9 @@ Function: The lisp expressions contained in the file referred to by
           the file is found and is readable the expressions contained
           in it are evaluated. If no untrapped errors occur the
           <filename> with any appended suffix is prepended onto the
-          list of the load history file #LH. This variable is used by
-          the conditional load function (require <filename>) to check
-          whether the file has already been loaded.
+          list of the load history variable #LH. This variable is used
+          by the conditional load function (require <filename>) to
+          check whether the file has already been loaded.
 
 Example:
 
@@ -7865,7 +8302,6 @@ alps:
 	   
 Conditional loading of a file
 -----------------------------
-
 require
 
 Syntax: (require <feature> [<filename>])
@@ -7913,12 +8349,11 @@ Time related primitives
 
 Pausing execution
 -----------------
-
 wait
 
 Syntax:    (wait <timeval>:s)
 	   For the more general form of invocation see wait in task handling.
-Type:      subr
+Type:      subr, time
 Argument:  <timeval> numeric scalar representing the number of seconds
            to wait.
 Function: Execution is paused for the time interval specified by
@@ -8190,6 +8625,73 @@ loc
 
 	
 gupdate must be used when #GB=>t
+
+
+
+Sound
+-----
+
+Initialise sound
+----------------
+sopen
+
+Syntax:     (sopen)
+Type:       fsubr, Sound
+Function:   Initialises the sound subsystem and allocates the
+            resources. 
+
+Return:     Returns t on success otherwise nil.
+
+Record sound
+------------
+rec
+
+Syntax:     (rec <duration>)
+Type:       subr, Sound
+Arguments:  <duration>:ns Duration of recording in seconds
+	    (gt <duration> 0) => t
+            #FS sampling frequency
+
+Function:   Records sound from the capture source for <duration>
+	    seconds.  Duration is limited to 10 seconds at a sampling
+	    frequency of 48kHz.
+
+Return:     Returns stereo matrix of normalised samples
+	    (p res) => {2 (* <duration> #FS)}
+
+Play sound
+----------
+play
+
+Syntax:     (play <samples> [<duration>])
+Type:       subr, Sound
+Arguments:  <samples>:na Array of normalised samples
+	    It must either be a vector or a 2xN array
+	    <duration>:ns optional duration in seconds
+
+Function:   Plays sound from the <samples> array.
+	    If <samples> is a vector the same samples are
+	    played on both channels. If duration is specified
+	    only that many seconds are played. If there are
+	    insufficient samples in the <samples> array they are
+	    looped until the required duration has been played.
+	    The number of samples and duration is limited to 10
+	    seconds at a sampling frequency of 48kHz. The duration is
+	    automatically truncated accordingly.
+	    
+Return:     Returns t on success
+
+
+Closing the sound subsystem
+---------------------------
+sclose
+
+Syntax:     (sclos)
+Type:       fsubr, Sound
+Function:   Closes the sound subsystem to release resources for other
+	    applications. 
+
+Return:     Returns t on success otherwise nil.
 
 
 Operating System commands
@@ -9102,8 +9604,8 @@ i.e. characters whose ASCII code has a value less than the value of the
 space character (decimal 32, hexadecimal 0x20).
 
 A special case is needed is to represent the <ctrl-\> character ASCII
-value 28. The sequence \q is used to represent this value in symbolic
-expressions.
+value 28. The sequence \q is used to represent this value in character
+literals.
 
 "ab\qcde" => ab<ctrl-\>cde
 (chr 28) ;=> "\q"
