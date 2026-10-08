@@ -1,4 +1,4 @@
-;; Time-stamp: <2024-10-08 22:30:09 dave>
+;; Time-stamp: <2026-10-08 18:41:44 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -15,9 +15,12 @@
 ;; Add generalised sums of sequences
 ;; Clean up unused functions and re-group related stuff
 
-(a defun 'de defexpr 'df defmacro 'dm)
+;; Define nice lisp names for our laconic function names
+(a defun 'de defexpr 'df defmacro 'dm define 'dc condition-case 'cc unwind-protect 'uwp)
+;; shorthand inline function definition
+;; (($(X) (+ X X)) 2) ;=> 4
 (df $ (a b) (list* 'lambda a b))
-; character sets
+;; character sets
 (a #p (chr (i (+ 32 [0 95]))))          ; printable characters
 (a #d "0123456789")                     ; digits
 (a #lc (chr (i {(num "a") (num "z")}))) ; lower case alphabetic
@@ -34,7 +37,7 @@
 (defun cap (X)  "Convert char arg X to upper case"
     (let ((N (num X))) (chr (- N (* 32 (^ (> N 96) (< N 123)))))))
 
-(defun Printable (C X) "Replace by C the non-printable chars in X"
+(defun Printable (C X) "Replace C for the non-printable chars in X"
   (let ((T (rav X)))
     (aset T C (k (v (< (num T) 32) (> (num T) 127)) (i (p T))))
     (p (p X) T)))
@@ -131,20 +134,22 @@
 			      (a Found (- N 2))
 			    (incr N)))
 			(close F))
-		      Found)))
+		      Found))
+	  (Fun (car F)))
       (cond ((null F)
 	     (sys (fmt "emacsclient -e '(view-file \"doc/userdoc.txt\")'")))
 	    ((gt (len F) 1) (error "doc: takes at most 1 arg"))
-	    ((primp (car F))
-	     (if (FindDoc (car F))
+	    ((or (primp Fun) (and (boundp Fun) (primp (eval Fun))))
+	     (unless (primp Fun) (a Fun (eval Fun)))
+	     (if (FindDoc Fun)
 		 (sys (fmt "emacsclient -e '"
 			   "(let () (find-file "
 			   "\"doc/userdoc.txt\")"
 			   "(goto-line " Found ")"
 			   "(view-mode)"
 			   "(recenter-top-bottom 0))'"))
-	       (fmt "Sorry " (car F) " not documented yet")))
-	    (t (a F (eval (car F)))
+	       (fmt "Sorry " Fun " not documented yet")))
+	    (t (a F (eval Fun))
 	       (cond ((atom F) (get F '#DOC))
 		     ((member (car F) '(lambda fexpr macro))
 		      (if (chrp (caddr F))
@@ -180,7 +185,11 @@
     (if (or (not (symbolp F)) (ne 'macro (car (eval F))))
 	(error (fmt F " is not a macro")))
     `((fexpr ,@(cdr (eval F))) ,@B))
-;;  (macroexpand FOR I 1 10 (print I)) ;=> (let ((I 1)) (while (le I 10) (print I) (incr I)))
+;;  (macroexpand FOR I 1 10 (print I))
+;;=> (let ((I 1)) (while (le I 10) (print I) (incr I)))
+
+(defmacro Open (P) "Variant of (open) that traps file errors returning nil"
+    `(cc ERR (open ,@P) (bad_file (princl (fmt "Error: " (cdr ERR))) nil)))
 
 (defmacro FOR (X) ;; Fortran DO loop thing
   (cond ((eq (caddr X) 'DOWNTO) ;; (FOR I 10 DOWNTO 1 ...)
@@ -325,8 +334,6 @@
 	    "HER SNAKKES APL" "ICI ON PARLE APL" "QUI SI PARLA APL"
 	    "AQUI SE HABLA APL" "HIER SPRICHT MAN APL"))))
 
-(de be (f g) `(lambda (x y) (,f x (,g y)))) ; APL beside operator
-
 (defun ReduceL (F X) ; F dyadic on lists
     (let ((R (cond ((null X) nil)
 		   ((null (cdr X)) (car X))
@@ -434,9 +441,9 @@
 (defconst GR (/ (+ 1 (sqrt 5)) 2))  ; Golden Ratio
 
 ;; some basic stats
-(defun min (X) (r 'f X))
+(defun min (X) (r 'f (rav X)))
 
-(defun max (X) (r 'c X))
+(defun max (X) (r 'c (rav X)))
 
 (defun sum (X) (rReduce '+ X))
 
@@ -564,12 +571,15 @@
 			((atom A) A)
 			(t (colprt (sort 'lt A))))))
 
-(defun listf (F S W) 
-    (let ((R "-UGSrwxrwxrwx") (T "fc?d?b?-?l?s???") (Ind [9 2 3 1]))
+(defun listf (F S) ;; One line of file listing F name, S stat
+  ;; W free, fmt width for nth Ind stat fields
+  ;; Ind Free indeces of format width fields
+    (let ((R "-rwxrwxrwx") (T "fc-d-b---l-s"))
       (if S (fmt (aref T (nth 8 S))
-		 (aref R (+ #IO (* (i 12) (enc (p 12 2) (nth 7 S))))) 
-		 (implod (mapcar '(lambda (X) (fmt " " (nth (aref Ind X) S):
-						  (aref W X))) (explod (i 4))))
+		 (aref R (+ #IO (* (i 9) (enc (p 9 2) (nth 7 S)))))
+		 (implod (mapcar '(lambda (X) (fmt (nth (aref Ind X) S):
+						   (aref W X):(* -1 (< W 0))))
+				 (explod (i 4))))
 		 " " (FD (date (nth 5 S)))  ; mtime
 		 " " F))))                  ; name
 
@@ -578,19 +588,25 @@
 	     ((chrp (car F)) (car F))
 	     ((error "ll bad file name"))))
   (let* ((SL (dl F))
-	 (FL (if (listp SL) (sort '(lambda (X Y) (lt (low X) (low Y))) SL) SL))
-	S L (W (p 4 0)) (Ind [9 2 3 1]) (#IO 1) )
-    (cond ((eq SL F) (princl (listf F (st F) W)))
-	  ((null SL) (error "no such file or directory"))
-	  (t (a L  (mapcar '(lambda (X) (st {F "/" X})) FL))
-	     (FOR I 1 4
-		  (aset W 
-			(ReduceL 'c
-				(mapcar 
-				 '(lambda (X) (p (fmt (nth (aref Ind I) 
-							   X)))) L))
+	 (FL (if (listp SL) (sort '(lambda (X Y) (lt (low X) (low Y))) SL) (list SL)))
+	 (lsst '(lambda (F) (let ((S (st F)))
+			      (append (list (car S) (cadr S) (lsGetUser (caddr S))
+					    (lsGetGroup (nth 3 S)))
+				      (nthcdr 4 S)))))
+	 (lsGetUG '(lambda (F) ;; make closure for get user name / group from /etc/passwd|group
+		     (let ((G (mapcar '(lambda (X) (cons (nth 4 X) (car X))) (readf F))))
+		       (fun '(lambda (X) (let ((Y (assoc X G))) (if Y (cdr Y) (fmt X))))))))
+	 (lsGetUser (lsGetUG "/etc/passwd"))
+	 (lsGetGroup (lsGetUG "/etc/group"))
+	 S L (W (p 4 0)) (Ind [9 2 3 1]) (#IO 1))
+    (unless SL (error "no such file or directory"))
+    (a L (if (eq SL F) (list (lsst F))
+	   (mapcar '(lambda (X) (lsst {F "/" X})) FL)))
+    (FOR I 1 4 (aset W ((if (memq I '(2 3)) '- '+)
+			(+ 1 (ReduceL 'c (mapcar '(lambda (X) (p (fmt (nth (aref Ind I) X))))
+						 L))))
 			I))
-	     (mapc '(lambda (X Y) (princl (listf X Y W))) FL L)))))
+    (mapc '(lambda (X Y) (princl (listf X Y))) FL L)))
 
 
 (defexpr lls (Suffix Dir)
@@ -737,9 +753,8 @@
 	(t "No stats capabililty")))
 
 (defexpr Profile (Exp) "Show profile executing Exp"
-  (cond ((HASCAPS "T") (unwind-protect
-			   (let () (stats t) (stats) (a Exp (eval (car Exp))))
-			 (print "Unwinding") (stats nil))
+  (cond ((HASCAPS "T") (uwp (let () (stats t) (stats) (a Exp (eval (car Exp))))
+			    (print "Unwinding") (stats nil))
 	 (SS 4) Exp)
 	(t "No stats capabililty")))
 
@@ -927,7 +942,7 @@
 	(tkon/ '(lambda (X)
 		  (mapcan '(lambda (X) (list (if (dirp X) {X "/"} X))) X)))
 	DD)
-    (unwind-protect 
+    (uwp
        (while (a DD (SELECT "?" (tkon/ (cdr (sort 'lt (dl)))) 1))
           (cond ((filep DD) (pg DD)) ((dirp DD) (wd DD)) 
            (t (print DD) (error "unexpected entry")))) (wd OD))))

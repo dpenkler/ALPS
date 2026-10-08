@@ -242,7 +242,7 @@
 	))
 
 (defun TPLIST () ; property lists
-   (unwind-protect
+   (uwp
        (prog 
 	((A '(a b c d e f g h i j k l m n o p q r s t u v w x y z)))
 	(freeze)
@@ -451,11 +451,11 @@
 	'(lambda (X)
 	   (prog ()
             (a Charybdis
-	     (condition-case err
+	     (cc err
 		 (a Scylla
 		    (catch 'A
 		      (a Sisyphus
-			 (unwind-protect 
+			 (uwp 
 			     (let ()
 			       (push (list 1 "Start Uwdp form") 'RL)
 			       (cond ((eq X 'Return) (return  RR))
@@ -498,7 +498,7 @@
 		  (cond ((zerop N) nil)
 			(t (cons (mkc (- N 1)) nil))))))
     (if C (let () (mkc 9000) "TSTKOVFL OK, no trap , no overflow")
-      (condition-case err
+      (cc err
 	  (let () (mkc 9000) "TSTKOVFL OK, no overflow")
 	(stk_ovfl (Dprint (fmt "Stack overflow caught at " M " aborting test"))
 		  "TSTKOVFL Succeeded"))))))
@@ -1401,7 +1401,8 @@ PQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~") (B "
       (N S ; these are free in T. One day we will find them automagically
 	 (T
 	  '(
-;;;(shell-command "grep ';=>' idioms.al | sed -e 's/^;; /(/' -e 's/;=>//' -e 's/$/)/'" t nil)((RemRep "rrrambblerr")   "rambler")
+;;;(shell-command "grep ';=>' idioms.al | sed -e 's/^;; /(/' -e 's/;=>//' -e 's/$/)/'" t nil)
+((RemRep "rrrambblerr")   "rambler")
 ((RemDupIII [10 5 2 9 8 3 7 8 8 4])  [2 3 4 5 7 8 9 10])
 ((TRemDup)  " abcdefghijklmnopqrstuvwxyz")
 ((p (Expand (p [4 6] "Hello Polly Fred  Joe   ") "Sebastien"))  [5 9])
@@ -1471,6 +1472,7 @@ PQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~") (B "
 ((genc '(lambda (X) (eq (NP2A X) (NP2L X))) (explod (i 256)))  t)
 ((PatMat "the" "the quick brown fox jumped over the lazy dog")  [1 33])
 ((RepByBlank "Next_Page" "_")  "Next Page")
+((let((L(p [3 6] "He lloPo lly F red ")))(eql(RemBlankCols L)(RBC L)))  t)
 ((let ((L (p [3 5] "HelloPollySue  "))) (eql (ASort (rot 1 1 L)) L))  t)
 ((let ((L (p [3 5] "PollySue  Hi   "))) (eql (LSort L) (rev 1 L)))  t)
 ((let ((L (p [3 5] "HelloPollySue  "))) (eql (RemDupW (p [9 5] L)) L))  t)
@@ -1563,7 +1565,10 @@ PQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~") (B "
 ((UpperCase "please don't shout")   "PLEASE DON'T SHOUT")
 ((LeftBit [0 0 1 1 0 1 1 0])    [0 0 1 0 0 0 0 0])
 ((eql (s '< -1 -1 [0 0 1 1 0 1 1 0]) (LeftBit [0 0 1 1 0 1 1 0]))  t)
-	  )))
+
+
+)))
+
     (if (member nil
 		(mapcar '(lambda (X)
 			   (cond ((eql (eval (car X)) (cadr X)) t)
