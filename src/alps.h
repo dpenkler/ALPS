@@ -65,7 +65,7 @@
 /* Workspace size = (BIG*wsp_block*PROC)/1024 Megabytes.
    BIG=2 => 64MB on a 32 bit machine or 128MB on a 64 bit proc     */
 #define BIG             2       /* Default value,  argv overrides   */   
-#define max_line_len    1024    /* line length for input processing  */
+#define max_line_len    16384    /* line length for input processing  */
 #define max_files       32      /* maximum number of file descriptors */
 #define max_base        16      /* largest printable numeric base      */
 #define max_err_len     32      /* longest error message length         */
@@ -96,7 +96,7 @@
 #define Max_FB_Loop 8
 
 /* number of apl contants of different types */
-#define apl_ncon        45  /* numerics   */
+#define apl_ncon        46  /* numerics   */
 #define apl_ccon        2   /* characters */
 #define apl_wcon        21 /* words these are pointers */
 #define apl_consts      (apl_ncon + apl_ccon + apl_wcon)
@@ -372,12 +372,12 @@ typedef union ctable {
     /*num*/ hib, hob, hpp, hpw, hfw, hsd, hep, hvp, hwn, hnf, /* 00 */
     /*num*/ hcs, hcr, hpm, hpn, hls, hrl, hio, hct, htr, hai, /* 10 */
     /*num*/ hmi, hmn, hmx, hnn, hra, hdm, hcc, hop, hof, hvn, /* 20 */
-    /*num*/ hpl, hpd, hll, hdp, hdd, hdl, hgc, hfm, hfs, hcw, /* 30 */
-    /*num*/ hch, hgw, hgh, hfn, hwd,                          /* 40 */
-    /*chr*/                          hgs, hcp,                /* 40 */
-    /*ref*/                                    hdx, hrf, hpf, /* 40 */
-    /*ref*/ hlf, hhf, hrs, hex, hlx, hnm, hws, hsw, hhs, hpr, /* 50 */
-    /*ref*/ hlp, hlh, hqq, hkb, hpc, hgb, hdb, hal;           /* 60 */
+    /*num*/ hpl, hpd, hll, hdp, hdd, hdl, hgc, hfm, hfs, hsc, /* 30 */
+    /*num*/ hcw, hch, hgw, hgh, hfn, hwd,                     /* 40 */
+    /*chr*/                                hgs, hcp,          /* 40 */
+    /*ref*/                                         hdx, hrf, /* 40 */
+    /*ref*/ hpf, hlf, hhf, hrs, hex, hlx, hnm, hws, hsw, hhs, /* 50 */
+    /*ref*/ hpr, hlp, hlh, hqq, hkb, hpc, hgb, hdb, hal;      /* 60 */
     /*-------1----2----3----4----5----6----7----8----9---10---------*/
   } v;
 } ctable;
@@ -387,7 +387,7 @@ typedef enum {
   no_err,     no_room,    stk_ovfl,  unb_sym,    inv_sym,  inv_exp,  inv_fun,
   inv_numarg, inv_funarg, dom_range, sys_cor,    con_ass,  not_imp,  bad_num,
   bad_str,    bad_vec,    no_files,  inv_funame, ios_err,  bad_file, sys_par,
-  pgmr_inc,   user_err,   user_int,  sys_int,    last_err
+  pgmr_inc,   user_err,   user_int,  sys_int,    any_err
 } errors;
 
 /* alps.c =*/

@@ -13,7 +13,7 @@ inline static INST getInst(pointer lex) {return(lex.fb->data1.it);}
 inline static void setInst(pointer lex, INST id) {lex.fb->data1.it = id;}
 static void ckInstErr(int err) {
   if (err & 0x8000) {
-    alpsOutsn(alpserr,5,"iberr:",itox(iberr)," ibsta:",itox(err),"\n");
+    alpsOutsn(alpserr,7,"iberr:",itox(iberr)," ibsta:",itox(err)," ibcnt:",itos(ibcnt),"\n");
     error(ios_err,NULL);
   }
 }
@@ -107,6 +107,22 @@ pointer alpsWriteInst(pointer parm) {
   len  = ibcntl;
   if (len != nels(rex)) alpsOuts(alpserr,"wio short write\n");
   return(rex);
+}
+
+pointer alpsSerialPollInst(pointer parm) {
+  INST id;
+  pointer inst;
+  int err;
+  unsigned char status;
+  if ((nargs(parm) != 1) || (!isInst(arg1(parm))))
+    error(inv_funarg,"(cio <inst>)");
+  inst = arg1(parm);
+  id   = getInst(inst);
+  if (id < 0) error(ios_err,"Instrument offline");
+  err = ibrsp(id, (char *) &status);
+  ckInstErr(err);
+  return mkChr(&status, 1);
+
 }
 
 pointer alpsCloseInst(pointer parm) {

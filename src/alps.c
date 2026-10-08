@@ -1,5 +1,5 @@
-/*                           VERSION  -8.38-                                */
-#define REV          "Time-stamp: <2025-10-18 12:28:18 dave>"
+/*                           VERSION  -8.40-                                */
+#define REV          "Time-stamp: <2026-10-08 16:05:09 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -33,7 +33,7 @@
 #define Circumspect 1
 #define Low         2
 #define High        3
-#define MMDBUG      None
+#define MMDBUG      Circumspect
  
 #define FORWARD      /* We have forward declarations here my dear Blaise */
 #define ENVONLY  1
@@ -199,7 +199,7 @@ typedef enum { /* primitive and auxiliary case entries in bigEval */
   s_fexpr, s_macro,
   s_let,   s_letstar, s_prog,     s_progstar, s_return,   s_go,
   s_if,    s_when,    s_unless,   s_while,    s_repeat,  
-  s_catch, s_throw,   s_uwdprot,  s_condcase, s_error,
+  s_catch, s_throw,   s_uwdprot,  s_ccase,    s_error,
   s_cwcc,  s_peval,   s_getpri,   s_setpri,   s_send,
   /* Mapping functions */
   s_mapc, s_map,   s_mapcan, s_mapn,  s_mapcar, s_maplist,
@@ -271,7 +271,7 @@ typedef enum { /* primitive and auxiliary case entries in bigEval */
   /* Sound */
   s_sopen,   s_play ,   s_rec  ,     s_sclose,
   /* Instrument IO */
-  s_oio,     s_rio  ,   s_wio  ,     s_cio, 
+  s_oio,     s_rio  ,   s_wio  ,   s_sio,     s_cio, 
   /* Graphics */
   s_gclear,  s_gupdate, s_glinit,  s_genable, s_gdisable,
   s_graf,    s_loc,     s_proj,    s_gmat,    s_light,   s_glmodel,
@@ -301,7 +301,7 @@ typedef enum { /* primitive and auxiliary case entries in bigEval */
   s_setqq0,   s_defcn0,   s_evargs,   s_eva_do,    s_eva_end,   s_cond_cont,
   s_unbind,   s_ev_res,   s_fnarg1,   s_evlis,     s_evlis1,
   s_teval,    s_tevalx,   s_teval1,   s_ratchetd,  s_ret1,      s_go1,
-  s_throw1,   s_bail,     s_bailout,  s_condcase1, s_condcase2,
+  s_throw1,   s_bail,     s_bailout,  s_ccase1,    s_ccase2,
   s_or1,      s_and1,     s_and2,     s_negres,
   s_map1,     s_mapn1,    s_mapn2,    s_mapc1,     s_mapcar1,   s_maplist1, 
   s_mapcan1,  s_mapcan2,  s_find1,    s_findc1,
@@ -624,8 +624,8 @@ static const struct funent evtab[] = {
   {s_repeat, 	"repeat", 	fsubr, 0},
   {s_catch, 	"catch", 	fsubr, 0},
   {s_throw, 	"throw", 	subr,  4},
-  {s_uwdprot, "unwind-protect", fsubr, 0},
-  {s_condcase,"condition-case", fsubr, 0},
+  {s_uwdprot,   "uwp",          fsubr, 0},
+  {s_ccase,     "cc",           fsubr, 0},
   {s_error,	"error",        subr,  9},
   {s_cwcc, 	"cwcc", 	subr, 10},
   /*     Task handling                 */
@@ -883,6 +883,7 @@ static const struct funent evtab[] = {
   {s_oio, 	"oio", 	        subr,101},
   {s_rio, 	"rio", 	        subr, 75},
   {s_wio, 	"wio",  	subr, 76},
+  {s_sio, 	"sio",  	subr, 75},
   {s_cio, 	"cio", 	        subr, 75},
   /* Graphics */
   {s_gclear, 	"gclear", 	fsubr, 0},
@@ -998,8 +999,8 @@ static const struct funent evtab[] = {
   {s_throw1,	"throw1", 	evar,  0},
   {s_bail,	"bail", 	evar,  0},
   {s_bailout,	"bailout", 	evar,  0},
-  {s_condcase1,	"condcase1", 	evar,  0},
-  {s_condcase2,	"condcase2", 	evar,  0},
+  {s_ccase1,	"cc1", 	        evar,  0},
+  {s_ccase2,	"cc2",  	evar,  0},
   {s_or1, 	"or1", 	        evar,  0},
   {s_and1, 	"and1",	        evar,  0},
   {s_and2, 	"and2",	        evar,  0},
@@ -1254,38 +1255,39 @@ static conentT  h_consts[apl_consts] =   {
   {"#GC", num, s_con,   0,  0}, /*36 #GC number of garbage collections      */
   {"#FM", num, s_con,   1,  3}, /*37 #FM Free Memory vector                 */
   {"#FS", num, s_var,   0,  0}, /*38 #FS Sampling frequency for dsp         */
-  {"#CW", num, s_var,   0,  0}, /*39 #CW Console Width number of characters */
-  {"#CH", num, s_var,   0,  0}, /*40 #CH Console Height  "    "     "       */
-  {"#GW", num, s_con,   0,  0}, /*41 #GW Graphics Width number of pixels    */
-  {"#GH", num, s_con,   0,  0}, /*42 #GH Graphics Height  "    "     "      */
-  {"#FN", num, s_var,   0,  0}, /*43 #FN Graphics Font (num or chr)         */
-  {"#WD", num, s_var,   0,  0}, /*44 #WD Watchdog timer interval in seconds */
-  {"#GS", chr, s_var,   1,  0}, /*45 #GS Gensym base string end with digits */
-  {"#CP", chr, s_con,   1,  0}, /*46 #CP Capability string                  */
-  {"#DX", ref, s_var,   0,  0}, /*47 #DX Default eXp Read-Eval-Print Loop   */
-  {"#RF", ref, s_var,   0,  0}, /*48 #RF read file                          */
-  {"#PF", ref, s_var,   0,  0}, /*49 #PF print file                         */
-  {"#LF", ref, s_var,   0,  0}, /*50 #LF log file                           */
-  {"#HF", ref, s_var,   0,  0}, /*51 #HF history file                       */
-  {"#RS", ref, s_var,   0,  0}, /*52 #RS last result                        */
-  {"#EX", ref, s_var,   0,  0},	/*53 #EX last expression                    */
-  {"#LX", ref, s_var,   0,  0},	/*54 #LX latent expression                  */
-  {"#NM", ref, s_con,   0,  0},	/*55 #NM Name of alps executable (argv[0])  */
-  {"#WS", ref, s_con,   0,  0},	/*56 #WS workspace name                     */
-  {"#SW", ref, s_var,   0,  0}, /*57 #SW t if wsc is to be saved on exit    */
-  {"#HS", ref, s_var,   0,  0}, /*58 #HS History Stack (most recent first)  */
-  {"#PR", ref, s_var,   0,  0}, /*59 #PR Default prompt string              */
-  {"#LP", ref, s_var,   0,  0}, /*60 #LP Load Path                          */
-  {"#LH", ref, s_var,   0,  0}, /*61 #LH Load History                       */
-  {"#QQ", ref, s_var,   0,  0}, /*62 #QQ Quasiquote simplify hook           */
-  {"#KB", ref, s_var,   0,  0}, /*63 #KB KeyBoard translation assoc list    */
-  {"#PC", ref, s_var,   0,  0}, /*64 #PC performance counter list           */
-  {"#GB", ref, s_var,   0,  0}, /*65 #GB Graphics Buffer nil=Front t=Back   */
-  {"#DB", ref, s_var,   0,  0}, /*66 #DB Debug flag for mreptcb             */
-  {"#AL", ref, s_var,   0,  0}  /*67 #AL optional arguments list            */
+  {"#SC", num, s_var,   0,  0}, /*39 #SC Sound card index for /dev/dspX     */
+  {"#CW", num, s_var,   0,  0}, /*40 #CW Console Width number of characters */
+  {"#CH", num, s_var,   0,  0}, /*41 #CH Console Height  "    "     "       */
+  {"#GW", num, s_con,   0,  0}, /*42 #GW Graphics Width number of pixels    */
+  {"#GH", num, s_con,   0,  0}, /*43 #GH Graphics Height  "    "     "      */
+  {"#FN", num, s_var,   0,  0}, /*44 #FN Graphics Font (num or chr)         */
+  {"#WD", num, s_var,   0,  0}, /*45 #WD Watchdog timer interval in seconds */
+  {"#GS", chr, s_var,   1,  0}, /*46 #GS Gensym base string end with digits */
+  {"#CP", chr, s_con,   1,  0}, /*47 #CP Capability string                  */
+  {"#DX", ref, s_var,   0,  0}, /*48 #DX Default eXp Read-Eval-Print Loop   */
+  {"#RF", ref, s_var,   0,  0}, /*49 #RF read file                          */
+  {"#PF", ref, s_var,   0,  0}, /*50 #PF print file                         */
+  {"#LF", ref, s_var,   0,  0}, /*51 #LF log file                           */
+  {"#HF", ref, s_var,   0,  0}, /*52 #HF history file                       */
+  {"#RS", ref, s_var,   0,  0}, /*53 #RS last result                        */
+  {"#EX", ref, s_var,   0,  0},	/*54 #EX last expression                    */
+  {"#LX", ref, s_var,   0,  0},	/*55 #LX latent expression                  */
+  {"#NM", ref, s_con,   0,  0},	/*56 #NM Name of alps executable (argv[0])  */
+  {"#WS", ref, s_con,   0,  0},	/*57 #WS workspace name                     */
+  {"#SW", ref, s_var,   0,  0}, /*58 #SW t if wsc is to be saved on exit    */
+  {"#HS", ref, s_var,   0,  0}, /*59 #HS History Stack (most recent first)  */
+  {"#PR", ref, s_var,   0,  0}, /*60 #PR Default prompt string              */
+  {"#LP", ref, s_var,   0,  0}, /*61 #LP Load Path                          */
+  {"#LH", ref, s_var,   0,  0}, /*62 #LH Load History                       */
+  {"#QQ", ref, s_var,   0,  0}, /*63 #QQ Quasiquote simplify hook           */
+  {"#KB", ref, s_var,   0,  0}, /*64 #KB KeyBoard translation assoc list    */
+  {"#PC", ref, s_var,   0,  0}, /*65 #PC performance counter list           */
+  {"#GB", ref, s_var,   0,  0}, /*66 #GB Graphics Buffer nil=Front t=Back   */
+  {"#DB", ref, s_var,   0,  0}, /*67 #DB Debug flag for mreptcb             */
+  {"#AL", ref, s_var,   0,  0}  /*68 #AL optional arguments list            */
 }; /* zero origin */
 
-#define NUM_APL_CONST 68 /* set this to last index + 1 above for check */
+#define NUM_APL_CONST 69 /* set this to last index + 1 above for check */
 
 #if (NUM_APL_CONST!=apl_consts)
 Number of apl constants do no match!
@@ -1306,8 +1308,8 @@ static const hnval h_nval = { /* numeric initialisers */
     0.0, 0.0, -1.0 ,
   /* #VN        #PL           #PD          #LL             #DP   #DD  #DL */
   ALPS_VERSION, PRINT_LENGTH, PRINT_DEPTH, PRINT_LIST_LEN, -1.0, 3.0, 5.0,
-  /* #GC FM---------  FS       #CW  #CH  #GW  #GH  #FN  #WD               */
-  0.0, 0.0, 0.0, 0.0, 48000.0, 0.0, 0.0, 0.0, 0.0, 1.0, 5.0
+  /* #GC FM---------  FS       #SC  #CW  #CH  #GW  #GH  #FN  #WD          */
+  0.0, 0.0, 0.0, 0.0, 48000.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 5.0
 };
 
 /* character initialisers */
@@ -1347,7 +1349,8 @@ static const errentT errTab[] = {
   {pgmr_inc,	"pgmr_inc",    "Programmer incompetence detected"}, /* mine  */
   {user_err,    "user_err",    "User defined error"              },
   {user_int,    "user_int",    "User interrupt"                  },
-  {sys_int,     "sys_int",     "System interrupt"                }
+  {sys_int,     "sys_int",     "System interrupt"                },
+  {any_err,     "any_err",     "Any error"                       }
 };
 
 static const char *mmacctd[alst+2] = { /* memory management accounting labels */
@@ -1443,7 +1446,7 @@ static rootable r;                /* address table for root variables   */
 static const int no_root_vars = (sizeof(rootable) / indlen);
 static pointer s[s_con];          /* address table for builtins -{nil t}*/
 static pointer idelem[prim_dyadics]; /* table of real identity elements */
-static pointer errSym[last_err];  /* table of error symbols             */
+static pointer errSym[any_err+1]; /* table of error symbols             */
        pointer chartab[MAX_CS];   /* pointers to single char symbols    */
 static pointer sstrtab[MAX_CC];   /* pointers to single char constants  */
                                   /* last one is scratch space !!!      */
@@ -1695,6 +1698,7 @@ inline static bool isNumop(lispTypes op) {
   return ((s_dist <= op) && (op <= s_binom));
 }
 
+inline static bool isInt(number n) {number w; return (modf(n,&w) == 0);} 
 
 /* global scope result, destination & envp manipulation primitives */
 
@@ -1875,6 +1879,7 @@ void setSym(pointer sym, pointer val) {
 	return;
       }
   }
+  /* Context not found on env stack - set it in the global context */
   sym.at->value = val;
   cacheSymVal(sym,val);
 }
@@ -3626,10 +3631,13 @@ static void bdb() { /* boogey debug landing pad */
 
 #if (GRAF==1)
 int widMarker(pointer lex) {
-  ASSERT(isWidget(lex));
-  if (isMarked(lex)) return 1;
   // alpsOutsn(alpserr,3,"widMarker marking",itox(lex.wh),"\n");
-  mark(lex);
+  if (isWidget(lex)) {
+    if (isMarked(lex)) return 1;
+    mark(lex);
+    return 0;
+  }
+  markacc(lex); // callback is a list
   return 0;
 }
 
@@ -3682,7 +3690,7 @@ static void markEnv(pointer emark) { /* FIXME: Optimise */
   int zz;
 #if (MMDBUG==High)
     alpsOutsn(alpserr, 9,"Marking envblk #",itos(boogey_ecnt)," @",
-	      itox(emark.wh)," for nargs=", itos(n)," argp=",
+	      itox(emark.wh)," for nargs=", itos(emark.ev->nargs)," argp=",
 	      itox(emark.ev->argp.wh), "\n");
 #if (DEBUG)	
 	alpsOutsn(alpserr,4," ownr = ",evtab[emark.ev->owner].lispName,
@@ -3982,7 +3990,7 @@ static void boogeyMan(const acctp acc) {
 #endif
 
   /* Protect error symbols */
-  for (i=0;i<last_err;i++) markSym(errSym[i]);
+  for (i=0;i<=any_err;i++) markSym(errSym[i]);
   /* Mark single char constants and symbols   */
   for (i=0;i<256;i++) {
     markAtom(chartab[i]);
@@ -5720,7 +5728,7 @@ static void initWorkspace(void) {
     setVal(lex,actv.h[i]);
   }
   /* Build error symbols */
-  for (i = 0; i < last_err; i++){
+  for (i = 0; i <= any_err; i++){
     if (i != errTab[i].errind) {
       mess = mkEmes(7,"initWorkspace: Programmer incompetence detected:\n "
 	     "    error index for ",errTab[i].errname," is ",
@@ -5847,7 +5855,7 @@ static bool load_wspc(const uchar *name) {
     actv.h[i].wh   = wbuf[j++];
   }
   for (stype = s_nop; stype < s_con; stype++) s[stype].wh    = wbuf[j++];
-  for (i=0;i<last_err;i++)                    errSym[i].wh   = wbuf[j++];
+  for (i=0;i<=any_err;i++)                    errSym[i].wh   = wbuf[j++];
   for (i=0;i<MAX_CS;i++)                      chartab[i].wh  = wbuf[j++];
   for (i=0;i<MAX_CC;i++)                      sstrtab[i].wh  = wbuf[j++];
   for (i=0;i<=num_env_bkts;i++)               env_free[i].wh = wbuf[j++];
@@ -5918,7 +5926,7 @@ static bool save_wspc(const uchar *name) {
     wbuf[j++] = actv.h[i].wh;
   }
   for (stype = s_nop; stype < s_con; stype++) wbuf[j++] = s[stype].wh;
-  for (i=0;i<last_err;i++)                    wbuf[j++] = errSym[i].wh;
+  for (i=0;i<=any_err;i++)                    wbuf[j++] = errSym[i].wh;
   for (i=0;i<MAX_CS;i++)                      wbuf[j++] = chartab[i].wh;
   for (i=0;i<MAX_CC;i++)                      wbuf[j++] = sstrtab[i].wh;
   for (i=0;i<=num_env_bkts;i++)               wbuf[j++] = env_free[i].wh;
@@ -6145,10 +6153,8 @@ pointer alpsOpenF(pointer parm) { /* open file or socket */
       }
       mkGString(fname,tline);
       fd = open((char *)tline,flags,00640);
-      if (0 > fd) {
-	alpsOutsn(alpserr,3,"Open failed on file \"",(char *)tline, "\"\n");
-	return pnil;
-      }
+      if (0 > fd)
+	error(bad_file,mkEmes(3,"Open failed on file \"",(char *)tline,"\""));
       if (isatty(fd) && nargs(parm)==3) {
 	if (!isNum(arg3(parm))) {
 	  close(fd);
@@ -6578,7 +6584,7 @@ static integer prconst(fibrec *out, pointer lex, integer itab, bool pflag,
   noels  = nels(lex);
   totcnt = 0;  /* total printed length */
   dodq   = !((pc == s_princ) || (pc == s_prat) || (pc == s_prinl));
-  if (pc == s_princ) itab = -1;
+  // if (pc == s_princ) itab = -1; FIXME ??
   count  = 0;           /* chacracters printed in current line so far */
   lcnt   = 0;           /* line count */
   if (p < -1) { p=ep; fexp=1; }
@@ -8059,7 +8065,7 @@ inline static double pprodDiv(double s, int val) {
   register int i;
   double r = idprod;
   for (i=1;i<=val;i++) r *= s++/(double)i;
-  return r;
+  return rint(r);
 }
 
 inline static double nprodDiv(double s, int val) {
@@ -8067,7 +8073,7 @@ inline static double nprodDiv(double s, int val) {
   register int i;
   double r = idprod;
   for (i=1;i<=val;i++) r *= -s++/(double)i;
-  return r;
+  return rint(r);
 }
 
 /* binomial coefficients generalised for negative and real arguments */
@@ -8150,7 +8156,9 @@ static bool sameShape(pointer lex, pointer rex) {
 }
 
 static inline number alpsDiv(number x, number y) {
-  return (x == y) ? 1.0 : x / y;
+  return (x == y) ? 1.0 :
+    (y == 0) ? (x > 0) ? getNumVal(a.v.hmx) : getNumVal(a.v.hmn)
+    : x / y;
 }
 
 static number alpsGcd(number l, number r) {
@@ -8731,7 +8739,8 @@ static pointer execute(lispTypes op, integer nargs, pointer parms)    {
     case s_plus:  for (i=0; i < noels; i++) lex.np[i] =  rex.np[i];       break;
     case s_minus: for (i=0; i < noels; i++) lex.np[i] = -rex.np[i];       break;
     case s_times: for (i=0; i < noels; i++) lex.np[i] = apl_signum(tol);  break;
-    case s_divid: for (i=0; i < noels; i++) lex.np[i] = 1.0 / rex.np[i];  break;
+    case s_divid: for (i=0; i < noels; i++) lex.np[i] = alpsDiv(1.0, rex.np[i]);
+								          break;
     case s_power: for (i=0; i < noels; i++) lex.np[i] = exp(rex.np[i]);   break;
     case s_resid: for (i=0; i < noels; i++) lex.np[i] = fabs(rex.np[i]);  break;
     case s_binom: for (i=0; i < noels; i++) lex.np[i] = rgamma(rex.np[i]);break;
@@ -9433,12 +9442,10 @@ static pointer drop(integer nargs, pointer parms) {
   rbp   = r.s.lds.ip;     /* short hand */
   lns   = nels(lex);
   integer bas[lnd],ind[lnd],lim[lnd],sel[lnd];
-  if (lnd && lnd != lns) {
-    if (sgltn(lex)) {
+  if (lnd && (sgltn(lex))) {
       for (i=0;i<lnd;i++) sel[i] = vadd(lex).np[0];
-    }  else {
+  } else if (lnd != lns) {
       error(dom_range,"(p (, selector)) must equal (rank arg)");
-    }
   } else {
     for (i=0;i<lnd;i++) sel[i] = vadd(lex).np[i];
   }
@@ -10046,7 +10053,7 @@ static pointer decod(integer nargs, pointer parms) {
 } /* decod */
 
 static pointer encod(integer nargs, pointer parms) {
-  integer i,j,k,m,n,lnd;
+  integer i,j,m,n,lnd;
   pointer result,lex,rex;
   number *lp,*rp,*res,val,quo,tem;
 
@@ -10062,13 +10069,12 @@ static pointer encod(integer nargs, pointer parms) {
   res = vadd(result).np;
   n   = nels(lex)-1;
   m   = nels(rex);
-  k   = 0;
   for (i=0;i<m;i++) {
     val = rp[i];
     for (j=n;j>=0;j--) {
       tem = lp[j];
-      quo = (tem != idadd) ? floor(val/tem) : idadd;
-      res[j*m+i] = val - quo*lp[j];
+      quo = (tem != idadd) ? trunc(val/tem) : idadd;
+      res[j*m+i] = val - quo*tem;
       val = quo;
     }
   }
@@ -10394,6 +10400,7 @@ static pointer iset(integer nargs, pointer parms) {
   for (i = 0; i < numind; i++) {
     iind = i;
     for (j=0;j<ndims;j++) {
+      if (!isInt(rex.np[iind])) error(dom_range,"non-integer index");
       it = ((k=rex.np[iind])>=0) ? k - org : getDim(mat,j) + k;
       if ((it < 0) || (it >= getDim(mat,j))) {
 	error(dom_range, mkEmes(6,"index value ",itos(it+org),
@@ -10427,6 +10434,7 @@ static pointer iset(integer nargs, pointer parms) {
 }
 
 #if 0
+  // XXX TODO check for non integer index 
 static pointer aset(integer nargs, pointer parms) {
   integer ndims = 0, i, j, k, m, len, ldim, noels, org, pindex, item, carry;
   pointer mat, val, lex, tex, p;
@@ -10732,9 +10740,10 @@ static pointer aset(integer nargs, pointer parms) {
       return;
     }
     for (l = 0; l < nels(tex); l++) {
-      item = (vadd(tex).np[l] >= 0) ?
-	(integer)vadd(tex).np[l] - asetOrigin :
-	getDim(asetRes,dims) + (integer)vadd(tex).np[l];
+      if (!isInt(vadd(tex).np[l])) error(dom_range,"non-integer index");
+      item = (integer)vadd(tex).np[l];
+      item =
+	(item >= 0) ? item - asetOrigin : getDim(asetRes,dims) + item;
       asetLoop(dims + 1, index + item *  r.s.lds.ip[dims]);
     }
   }
@@ -10849,9 +10858,10 @@ static pointer aref(integer nargs, pointer parms) {
       }
     } else {
       for (l = 0; l < nels(tex); l++) { /* for each index val */
-	item = (vadd(tex).np[l] >= 0) ?
-	  (integer)vadd(tex).np[l] - aref_origin :
-	  getDim(aref_arg,dims) + (integer)vadd(tex).np[l];
+	if (!isInt(vadd(tex).np[l])) error(dom_range,"non integer index");
+	item = (integer)vadd(tex).np[l];
+	item =
+	  (item >= 0) ? item - aref_origin : getDim(aref_arg,dims) + item;
 	arefLoop(dims + 1, index + item * r.s.lds.ip[dims]);
       }
     }
@@ -11219,8 +11229,6 @@ static pointer alpsFrc(pointer lex) {
   }
   return res; // sendres
 }
-
-static inline bool isInt(number n) {number w; return (modf(n,&w) == 0);} 
 
 static pointer alpsIsInt(pointer lex) {
   pointer res,rex,mex;
@@ -12910,6 +12918,7 @@ stkp +--------------+
   case s_oio: sendRes(alpsOpenInst(parm)); goto srend; 
   case s_rio: sendRes(alpsReadInst(parm)); goto srend; 
   case s_wio: sendRes(alpsWriteInst(parm)); goto srend; 
+  case s_sio: sendRes(alpsSerialPollInst(parm)); goto srend; 
   case s_cio: sendRes(alpsCloseInst(parm)); goto srend; 
 #else
   case s_oio: case s_rio:  case s_wio: case s_cio: error(not_imp,"INSTCON");
@@ -13187,7 +13196,7 @@ stkp +--------------+
   case s_sopen:    sendRes(sound_init());                 goto alret;
   case s_rec:      sendRes(alps_rec(nargs(parm),parm));   goto srend;
   case s_play:     sendRes(alps_play(nargs(parm),parm));  goto srend;
-  case s_sclose:   sound_close(); sendRes(ptru);          goto alret;
+  case s_sclose:   sendRes(sound_close());                goto alret;
 #else
   case s_sopen: case s_rec: case s_play: case s_sclose: error(not_imp,"SOUND");
 #endif
@@ -14913,7 +14922,7 @@ stkp +--------------+
     goto throw_some_more;
     
   case s_bail:
-    p1 = findCtl(t,0,s_condcase1);
+    p1 = findCtl(t,0,s_ccase1);
     if (isNil(p1)) {            
       showError(t);                  /* no error handlers to call so shout */
       t->recstkp = t->base;          /* and rappel down to the very bottom */
@@ -14922,7 +14931,7 @@ stkp +--------------+
     } else {
       t->recstkp = p1;               /* Err handler to ratchet down to     */
       save(pnil);
-      goreto(s_ratchetd,s_condcase2);/* and come back for handler handling */
+      goreto(s_ratchetd,s_ccase2);/* and come back for handler handling */
     }
     break;
     
@@ -14932,7 +14941,7 @@ stkp +--------------+
     opcd = s_done;
     break;
 
-  case s_condcase: /* fsubr */
+  case s_ccase: /* fsubr */
     if (listLen(iexp) < 3) 
       error(inv_numarg,"(condition-case <var> <protected-form> <handlers>+)");
     if (!isSym(car(iexp))) error(inv_funarg,"<var> not symbol");
@@ -14945,17 +14954,17 @@ stkp +--------------+
     save(cddr(iexp));                 /* save handlers                     */
     save(envp);                       /* save environment for handlers     */
     iexp = cadr(iexp);                /* evaluate the body                 */
-    goreto(eval,s_condcase1);
+    goreto(eval,s_ccase1);
     break;
 
-  case s_condcase1:                   /* get here only with error-free body*/
+  case s_ccase1:                      /* get here only with error-free body*/
     popStk(3);                        /* pop saved envp,handlers and var   */
     goto alret;                       /* Res is that of bod                */
 
-  case s_condcase2:                   /* here on error in condcase body    */
-    popStk(1);                        /* evaluate condcase handlers        */
+  case s_ccase2:                      /* here on error in cond_case body   */
+    popStk(1);                        /* evaluate cond_case handlers       */
     p1 = restore();                   /* Came here from s_ratchetd looking */
-    ASSERT(p1.wh == s_condcase1);     /* for s_condcase1 in t->recstkp     */
+    ASSERT(p1.wh == s_ccase1);        /* for s_ccase1 in t->recstkp        */
     p1 = restore();                   /* restore envp end environment      */
     swap_down(envp,p1);
     setEnv(p1);
@@ -14964,6 +14973,7 @@ stkp +--------------+
     while (!isNil(p2)) {              /* look for matching handler          */
       if (isEqual(caar(p2),errSym[t->errflg])) break;
       if (isList(caar(p2)) && !isNil(memq(errSym[t->errflg],caar(p2)))) break;
+      if (isEqual(caar(p2),errSym[any_err])) break;
       p2 = cdr(p2);
     }
     if (isNil(p2)) {

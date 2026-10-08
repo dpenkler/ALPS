@@ -63,7 +63,9 @@ void alpsEZDestroyCB(EZ_Widget *widget, void *pdata) {
     lex.vd = pdata;
     ASSERT(isWidget(lex));
     lex.fb->data2.pt = NULL;
+#if (DEBUG)
     alpsOutsn(alpserr,3,"destroyCB zapping widget for ",itox(lex.wh),"\n");
+#endif
   }
 }
 
@@ -560,7 +562,7 @@ static void alpsEZCB(EZ_Widget *widget, void *pdata) {
   pointer lex,rex,cbexp;
   if (ez_fd < 0) return;
   rex.vd = EZ_GetWidgetPtrData(widget);
-  lex.vd = pdata; /* FIXME this better be protected elsewhere */
+  lex.vd = pdata; /* marked by EZ_markWidgetCallbacks */
   scheduleIOCB(lex, rex, 1);
 }
 
@@ -571,7 +573,7 @@ void alpsEZEV(EZ_Widget *widget, void *pdata,
   float   fx,fy;
   int     h,w;
   rex.vd = EZ_GetWidgetPtrData(widget);
-  lex.vd = pdata; /* FIXME this better be protected elsewhere */
+  lex.vd = pdata; /* also marked by EZ_markWidgetCallbacks */
   p1     = mkNum(eventType);
   protect(p1);
   p2 = pnil;
@@ -626,10 +628,16 @@ void alpsCfgWidget(EZ_Widget *w, pointer conf) {
     case EZ_CALLBACK:
       lex = car(args); /* no closure here so user can choose */
       EZ_ConfigureWidget(w,EZ_CALLBACK,alpsEZCB,lex.vd,0);
+#if (DEBUG)
+      alpsOutsn(alpserr,3,"Adding callback with data ", itox(lex.wh) ,"\n");
+#endif
       break;
    case  EZ_EVENT_HANDLER:
       lex = car(args); /* no closure here so user can choose */
       EZ_ConfigureWidget(w,EZ_EVENT_HANDLER,alpsEZEV,lex.vd,0);
+#if (DEBUG)
+      alpsOutsn(alpserr,3,"Adding event handler with data ", itox(lex.wh) ,"\n");
+#endif
       break;
       
       /* single string arg */
@@ -1024,6 +1032,7 @@ pointer gresize(integer n, pointer p) {
 
 pointer gload(integer n, pointer parms) {
   pointer lex;
+  EZ_Widget *w;
   EZ_Bitmap  *pixmap,*npixmap;
   EZ_GLImage *glimage, *bkImage;
   Pixmap pix,shape;
@@ -1036,7 +1045,7 @@ pointer gload(integer n, pointer parms) {
   idstr tline;
   float p[4],zl;
   number *imsp,sclh,sclw,scl;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return(pnil);
+  if ((ez_fd < 0) || !(w = EZ_Get3DCanvas())) return(pnil);
   if (n < 1 || n > 3) error(inv_numarg,"(gload <image-file-name> [<scale> [<imgspec>]])");
   if (!isChr(arg1(parms)) || ((n == 2) && (!isNum(arg2(parms)))))
     error(inv_funarg,"(gload <image-file-name> [<scale> [<imgspec>]])");
@@ -1049,6 +1058,8 @@ pointer gload(integer n, pointer parms) {
   lex=arg1(parms);
   pixmap = EZ_CreateLabelPixmapFromImageFile((char *)mkString(lex,tline,"gload"));
   if (!pixmap) error(inv_funarg,"Invalid image file");
+  if (!EZ_GetWidgetWindow(w))
+    error(inv_funarg, "Canvas window does not exist; use (dispwdgt <canvas-widget>)\n");
   depth = EZ_GetLabelPixmapInfo(pixmap, &pix, &shape, &iw, &ih);
   fw = iw; fh = ih;
   /* Get size of viewport in pixels */
@@ -1119,7 +1130,7 @@ pointer gsave(integer n, pointer p) {
   return(lex);
 }
 
-pointer gwar(integer n, pointer p) { /* get widget aspect ration */
+pointer gwar(integer n, pointer p) { /* get widget aspect ratio */
   pointer lex;
   int h,w;
   if (ez_fd < 0) return(pnil);
@@ -1137,12 +1148,23 @@ pointer wdgtdata(integer n, pointer p) {
   return(mkNum((double)EZ_GetWidgetIntData(w)));
 }
 
+
+static void markCallbacks(void *cb) {
+  pointer lex;
+  lex.vd = cb;
+#if (DEBUG)
+  alpsOutsn(alpserr,3,"Marking widget callback ", itox(lex.wh),"\n");
+#endif
+  widMarker(lex);
+}
+
 static void markWidgetTreeWork(EZ_Widget *w, int flag) {
   pointer lex;
   if(w) {
     EZ_Widget *children = EZ_GetChildrenWidget(w);
     lex.vd = EZ_GetWidgetPtrData(w);
     if (widMarker(lex)) return; // already marked
+    EZ_ProcessWidgetCallbacks(w, markCallbacks);
     markWidgetTreeWork(children, 1);
     if(flag) {
       EZ_Widget *sibling = EZ_GetSiblingWidget(w);
@@ -1156,6 +1178,5 @@ void markWidgetTree(EZ_Widget *w) {
     markWidgetTreeWork(w, 0); 
   }
 }
-
 
 #endif /* GRAF */
