@@ -90,20 +90,20 @@
 ;;
 ;; Commentary: W is to be set to a copy of V with duplicates removed.
 ;; To demonstrate this, consider the Kth element of V: (aref V K).
-;; There are two possibilities.
-;; If this is the first occurrence of the Kth element, that is,
-;; if there is no J less than K such that the Jth element of V
-;; is equal to the Kth element, (= (aref V J) (aref V K)) => 1,
-;; then (ind V (aref V K)) will be K, where dyadic (ind V (aref V K))) is the
-;; index function that returns the index of the first occurrence of
-;; (aref V K) in V.
-;; (aref (i (p V)) K) will of course be K as (i (p V)) is the sequence
-;; of integers from 1 to the number of elements in V. Monadic (i N)
-;; generates the integers from 1 to N and the monadic shape function (p V)
-;; returns the number of elements in the vector V. Thus in this case the
-;; Kth element of (= (ind V V) (i (p V))) will be 1.
-;; This is the selector argument S for the compress function (k S V). 
-;; Now if, on the other hand, there exists a J less than K such that
+;; There are two possibilities.  If this is the first occurrence of
+;; the Kth element, that is, if there is no J less than K such that
+;; the Jth element of V is equal to the Kth element, (= (aref V J)
+;; (aref V K)) => 1, then (ind V (aref V K)) will be K, where dyadic
+;; (ind V (aref V K))) is the index function that returns the index of
+;; the first occurrence of (aref V K) in V.  (aref (i (p V)) K) will
+;; of course be K as (i (p V)) is the sequence of integers from 1 to
+;; the number of elements in V.
+;; Monadic (i N) generates a vector of the integers from 1 to N and
+;; the monadic shape function (p V) returns the number of elements in
+;; the vector V. Thus in this case
+;; the Kth element of (= (ind V V) (i (p V))) will be 1.  This is the
+;; selector argument S for the compress function (k S V). Now if, on
+;; the other hand, there exists a J less than K such that
 ;; (= (aref V J) (aref V K)) => 1, then (ind V (aref V K)) will be J.
 ;; (aref (i (p V)) K) will, of course, still be K.
 ;; Because J does not equal K, the Kth element of the selector will be 0
@@ -112,12 +112,23 @@
 ;; if and only if it is the first (leftmost) occurrence of its value in V.
 ;; W will contain each of the different elements of V and it will
 ;; contain no duplicates. Therefore, W is V with duplicates removed.
+;; For example:
+;; (setq V "abcadbcc")     ;=> "abcadbcc"
+;; (ind V V)               ;=> [1 2 3 1 5 2 3 3]
+;; (i (p V))               ;=> [1 2 3 4 5 6 7 8]
+;; (= (ind V V) (i (p V))) ;=> [1 1 1 0 1 0 0 0]
+;; (k (= (ind V V) (i (p V))) V) ;=> "abcd"
+;;
 ;; Here we define the function RemDup that applies this idiom.
 (defun RemDup (V) (k (= (ind V V) (i (p V))) V))
 ;; (RemDup "a quick brown fox jumped over the lazy dogs") =>
 ;; "a quickbrownfxjmpedvthlzygs"
-
-;; Another variant of this is idiom is:
+;; See also (Unique) below.
+;; RemDup also works for numerics and refs:
+(RemDup [1 2 3 5 4 4 6 4 2]) ;=> [1 2 3 5 4 6]
+(RemDup $[Hello Polly Hello Simon Polly Fred]) ;=> $[Hello Polly Simon Fred]
+;;
+;; Another variant of this idiom is:
 ;; (a W (k (tr [1 1] (s '< -1 -1 (o '= V V))) V))
 ;;
 ;; This variant uses more advanced APL functions:
@@ -151,9 +162,14 @@
 ;; (tr [1 1] (s '< -1 -1 (o '= V V))) => [1 1 1 0]
 ;; and the compressor function selects only elements with a corresponding 1
 ;; (k [1 1 1 0] V) => "tar"
-;; This idiom directly generalises to higher dimensions such as the 
-;; case for a rank 3 array A:
-;; (a W (k 1 (tr [1 1] (s '< (r '^ (tr [1 3 3 2] (. '^ '= A (tr A)))))) A))
+;;
+;; This idiom directly generalises to higher dimensions.
+;; For rank 2 matrix A:
+;; (k 1 (tr [1 1] (s '< -1 -1 (. '^ '= A (tr A)))) A)
+;; See also RemDupW for a more efficient way
+;;
+;; For a rank 3 array A:
+;; (k 1 (tr [1 1] (s '< -1 -1 (r '^ (tr [1 3 3 2] (. '^ '= A (tr A)))))) A)
 ;; For example, let (a A (k 1 [2 1] (p [2 3 4] (i 24)))), 
 ;; where we duplicate the first plane of a 2 x 3 x 4 array with (k 1 [2 1] A)
 ;; to give a 3 x 3 x 4 array A:
@@ -171,7 +187,7 @@
 ;;  17 18 19 20
 ;;  21 22 23 24]
 ;;
-;; (k 1 (tr [1 1] (s '< (r '^ (tr [1 3 3 2] (. '^ '= A (tr A)))))) A) =>
+;; (k 1 (tr [1 1] (s '< -1 -1 (r '^ (tr [1 3 3 2] (. '^ '= A (tr A)))))) A) =>
 ;; [ 1  2  3  4
 ;;   5  6  7  8
 ;;   9 10 11 12
@@ -180,8 +196,23 @@
 ;;  17 18 19 20
 ;;  21 22 23 24]
 ;;
-;; Notice how the duplicated plane has been compressed out in the result.
-;; This generalisation uses the reduction (r) and inner product (.) operators.
+;; Notice how the duplicated plane has been compressed out in the
+;; result. This generalisation uses the transpose (tr) scan (s)
+;; reduction (r) and inner product (.) operators.
+;; (p A) ;=> [3 3 4]. So the shape of the result of the inner product
+;; (p (. '^ '= A (tr A))) ;=> [3 3 3 3]
+;; The result of the transpose (tr [1 3 3 2] arg) has a shape of [3 3 3]
+;; where the first axis of the result is the same as the 1st axis of
+;; arg, the third axis is the diagonal of the 2nd and 3rd axes of arg
+;; and the second is the 4th axis of arg. In other words
+;; (eq (aref result I J K) (aref arg I K K J)) =>t for each I,J,K in [1 2 3]
+;; The reduction eliminates the last dimension so we are left with
+;; (p (r '^ (tr [1 3 3 2] arg))) => [3 3]. The scan picks out the leading
+;; 1 in each row setting the rest of the elements to 0. The (tr [1 1] ..)
+;; extracts the diagonal of its argument to produce the selection vector
+;; used in the compression of the original array along its first axis,
+;; i.e. compression of the planes.
+;;
 ;; We capture the simpler one dimensional version of this idiom in RemDupII
 (defun RemDupII  (V) (k (tr [1 1] (s '< -1 -1 (o '= V V))) V))
 
@@ -334,8 +365,8 @@
 ;; f. Make an array in which each row contains the character
 ;; representation of one element of the input vector V
 (defun Arep (V)
-  (aref "0123456789" (+ 1 (tr (enc (p (f (+ 1 (l 10 (r 'c V)))) 10) V)))))
-;;(Arep [1 2 19 123]) =>
+  (aref "0123456789" (+ #IO (tr (enc (p (f (+ 1 (l 10 (r 'c V)))) 10) V)))))
+;;(Arep [1 2 19 123])=>
 ;;"001
 ;; 002
 ;; 019
@@ -343,8 +374,17 @@
 ;; (eql (Arep [1 2 19 123]) (p [4 3] "001002019123")) ;=> t
 
 ;; g. Blank out leading zeros in a string w
-(defun blzs (w) (let ((s (s 'v -1 -1 (<> w "0")))) (k (+ s (- s 1)) (k s w)))) 
+(defun blzs (w) (let ((S (s 'v -1 -1 (<> w "0")))) (k (+ S (- S 1)) (k S w)))) 
 ;; (blzs "00010000") ;=> "   10000"
+
+;; h. Blank out leading zeros in a character matrix
+(defun blzsm (w) (let ((S (r '+ (s '^ (= "0" w))))) (shft (- S) (shft S w))))
+;; (blzsm (Arep [1 2 19 1023])) =>
+;; "   1
+;;     2
+;;    19
+;;  1023"
+;; (eql (rav (blzsm (Arep [1 2 19 1023]))) "   1   2  191023") ;=> t
 
 ;; 7. AMTOAL and ALTOAM: Let A be a multi-dimensioned array, stored in
 ;; linear memory in row major order. If the memory addresses of some
@@ -486,7 +526,7 @@
 ;; To simplify experimentation define a function to invoke JUSTIFY given
 ;; a string V to justify and a line number Z:
 
-(require 'prims) ;; need this for the definitions< of some additional primitives.
+(require 'prims) ;; need this for the definitions of some additional primitives.
 
 (defun SJust (V Z)
   (let* ((V1 (k (rev (s 'v (<> " " (rev V)))) V))
@@ -876,10 +916,41 @@
 ;;    Fred
 ;;     Joe"
 
+;; In RemBlankLine we used the inner product (.) with (^) and (=).
+;; The inner product applies the second function (=) across each row
+;; of the first argument to the elements down the corresponding
+;; columm of the second argument and then applies a reduction using
+;; the first function (^) to the result thereof. The second argument 
+;; in this case is extended to conform to the shape of L.
+;; We could also use (k 1 (~ (r '^ (= L " "))) L) instead - reduction
+;; across the rows and compression over the columns. If we want to
+;; remove blank columns we need to do the reduction explicitly over
+;; the columns (k (~ (r '^ 1 (= L " "))) L) and the compression over
+;; the rows: no axis argument for (k). However by changing the order
+;; of the arguments in the dot product (.) idiom and compressing
+;; over the rows we obtain the same result.
+
+;; 5.1 Remove blank columns
+(defun RemBlankCols  (L) (k (~ (. '^ '= " " L)) L))
+(defun RBC           (L) (k (~ (r '^ 1 (= L " "))) L))
+;; (setq L (p [4 7] "He llo Po lly  F red    Joe "))
+;; "He llo 
+;;  Po lly 
+;;   F red 
+;;     Joe "
+;;
+;; (RemBlankCols L)
+;; "Hello
+;;  Polly
+;;   Fred
+;;    Joe"
+;; (let((L(p [3 6] "He lloPo lly F red "))) (eql(RemBlankCols L)(RBC L))) ;=> t
+;;
+
 ;; 6. Alphabetically sort a word list
 (defun ASort (L) "Alphabetically sort a word list L"
-       (aref L (gup (dec 27 (tr (+ -1 (ind #uc L))))) ()))
-;; #uc uppercase alphabetic characters defined in prims.al
+       (aref L (gup (dec 97 (tr (+ -1 (ind #p L))))) ()))
+;; #p vector of printable characters defined in prims.al
 
 ;; (let ((L (p [3 5] "HelloPollySue  "))) (eql (ASort (rot 1 1 L)) L)) ;=> t
 
@@ -891,6 +962,11 @@
 (defun RemDupW (L)
   (let ((Q (dec 2 (. '^ '= L (tr L))))) (k 1 (= (ind Q Q) (i (p Q))) L)))
 ;; (let ((L (p [3 5] "HelloPollySue  "))) (eql (RemDupW (p [9 5] L)) L)) ;=> t
+
+;; Sorted unique word list from text file
+(de SUWLfromFile (N)
+ (ASort(RemDupW(MakeArray " " (RedBlank(RepChar "\I\"" " " (rav (getf N))))))))
+;; (SWLfromFile "data/errnos")
 
 ;; 9. Find the number of occurrences of word W in list L
 (defun Wocc (W L) (r '+ (. '^ '= L W)))
@@ -1840,7 +1916,7 @@ LOOP  (go (tk (r 'v (rav (a G (<> (a T G) (v G (. 'v '^ G)))))) $[LOOP]))))
 
 (defun TKWIC () ;; Quick test of KWIC
   (let ((A (ReduceL Expand
- 	     (list (p [0 0]"")
+ 	     (list (p [0 0] "")
  "Characterisation of Through Spectra of silicon micro-rings"             
  "The unified modeling language"                                                
  "On the order of parameters in varyadic functions"
@@ -1848,7 +1924,7 @@ LOOP  (go (tk (r 'v (rav (a G (<> (a T G) (v G (. 'v '^ G)))))) $[LOOP]))))
  "The use of finite difference time domain modeling for the characterisation of  silicon micro-rings"
  "APL idioms for idiots"
  "Zettabyte file systems for non volatile memory systems")))
-	(L (MakeArray "The the of on a an for use in functions ")))
+	(L (MakeArray " " "The the of on a an for use in functions ")))
     (KWIC L A)))
 
 ;; 4. FIND: Given an array B of arbitrary rank and an array A that will "fit"
