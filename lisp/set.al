@@ -62,7 +62,19 @@
 (defun suniq (S) ;; remove duplicate elements, iterative version
   (mapn '(lambda (X) (unless (memq (car X) (cdr X)) (list (car X)))) S))
 
-; Array complement: returns vector of elements in A not in B
+(defun Auniq (S) ;; remove duplicate elements using APL RemDup idiom
+  ;; makes list of RemDup of reference vector of S
+  (explod ((lambda (V) (k (= (ind V V) (i (p V))) V)) (implod () t S))))
+
+;; (a L '(a c b 3 a d "ab" e 3 (a b c) "a" f a [1 2 3] "ba" "b"  "a" [1 2 3] (a b c) ab h 2 "ab"))
+;; (SUNIQ L) ;=>
+;;(a c b 3 d "ab" e (a b c) "a" f [1 2 3] "ba" "b" [1 2 3] (a b c) ab h 2 "ab")
+;; (Auniq L) ;=> ;; Note symbol ab and string "ab" considered equal
+;; (a c b 3 d "ab" e (a b c) f [1 2 3] "ba" h 2) 
+;; ((subst 'member 'memq SUNIQ) L) ;=> ; Using member instead of memq
+;; (a c b 3 d "ab" e (a b c) f [1 2 3] "ba" h 2)
+
+;; Array complement: returns vector of elements in A not in B
 (defun ACOMP (A B) (k (> (- (ind B A) #IO) (- (p B) 1)) A))
 
 ; Array intersection: returns vector of elements in A that are also in B

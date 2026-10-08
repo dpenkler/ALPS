@@ -46,6 +46,7 @@
     (/ (- (exp p n) (exp q n)) (- p q))))
 
 ;; +∘÷/40⍴1 example of reduction with Beside +∘÷ Bob Smith dyalog
+(de be (f g) `(lambda (x y) (,f x (,g y)))) ; APL beside operator
 (de CalcGR (N)  (Reduce (be '+ '/) 1 -1 (p N 1)))
 ;;  (FOR I 1 40 (print (CalcGR I)))
 

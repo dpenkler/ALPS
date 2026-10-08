@@ -833,7 +833,7 @@
        L))
    (a #WN (rav (tr (cat .5 (r 'f 1 (implod .5 Wmin))        ; window to fit all
 			(r 'c 1 (implod .5 Wmax))))))
-   (print #WN)
+   ;;(print #WN)
    (proj nil)
    (if plot_clear (gclear))
    (axes)
@@ -846,7 +846,7 @@
     (gdisable EZ_DEPTH_TEST EZ_LIGHTING EZ_CULL_FACE) 
     (setq H (max (implod (mapcar max X))))
     (setq L (min (implod (mapcar min X))))
-    (print (fmt "Window is " (setq #WN {-1 1 L H})))
+    ;; (print (fmt "Window is " (setq #WN {-1 1 L H})))
     (proj nil)
     (dispwdgt Canvas)
     (glinit)

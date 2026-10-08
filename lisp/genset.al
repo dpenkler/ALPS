@@ -115,6 +115,9 @@
 		      (not (null (genc '(lambda (Z) (member Z Q)) X))))
 		   R))))
 
+(defun OPSG (N) "Test if the sum of binomial coefficients (! (i {0..N}) N) = (exp 2 N)"
+       (eq  (r '+ (! (i {0 N}) N)) (exp 2 N)))
+
 (defun HB (X) ; Distribution of size of subsets of X gives binomial coeffs
    (let ((#IO 0) (A (p (+ 1 (len X)) 0)) N)
      (mapc '(lambda (X) (setq N (len X)) (aset A (+ 1 (aref A N)) N))
@@ -185,7 +188,7 @@
 		      (GTP (cdr X))))))
    X))
 
-; adapted  for sets from winston Lisp ed.2 
+; adapted for sets from winston Lisp ed.2 
 
 (defun PERMS (S SIZE) 
   (prog (PERMX PERMY (K 0))
