@@ -11,6 +11,13 @@
     (princl (aref " ._+/!\":*$()%\=-#" I)) 'ok))
   
 	    
-(defun mandc (Z) ;; just the complex function on Z
+(defun mandc (Z) ;; just the complex function on Z, iterative
   (let ((N 32) (T Z) (I (p (p Z) 0)))
     (FOR J 1 N (a T (+ (* T T) Z) I (+ I (>= (| T) 2)))) (- 1 (/ I N))))
+
+(defun mandb (Z);; just the complex function on Z, recursive
+  (let ((N 1024))
+    ((label R lambda (J T I)
+       (if (zerop J) (- 1 (/ I N))
+	 (R (- J 1) (+ (* T T) Z) (+ I (>= (| T) 2)))))
+	 N Z  (p (p Z) 0))))
