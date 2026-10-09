@@ -1276,8 +1276,8 @@
 	 (#WN {(- I) I (- I) I})
 	 (ZL I)) ;; Z clip limit
     (aset Obj (o '% [9 11] K) [2 1] () ()) ;; split real and im to planes 2 & 1
-;;    (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
-    (aset Obj (* Scale (re Res)) 3 () ()) ;; scale & clip res
+    (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
+;;    (aset Obj (* Scale (re Res)) 3 () ()) ;; scale & clip res
     (gcanvas Canvas)
     (dispwdgt Canvas)
     (glinit)
