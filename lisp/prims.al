@@ -1,4 +1,4 @@
-;; Time-stamp: <2026-10-08 18:41:44 dave>
+;; Time-stamp: <2026-10-09 12:31:09 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -792,7 +792,18 @@
 ;;
 ;; File system and directory utilities
 ;;
-(defun getf (Fname) "Return character array of contents of text file FName"
+
+(defun getf (Fname)
+  "Return a character vector with the binary contents of file Fname"
+  (let ((ST (st Fname)) F B)
+    (when (null ST) (error (fmt "no such file: " Fname)))
+    (when (null (car ST)) (error (fmt "cannot get directory " Fname)))
+    (a F (open Fname))
+    (a B (getb F (cadr ST)))
+    (close F)
+    B))
+
+(defun readf (Fname) "Return character array of contents of text file FName"
     (let* ((#IO 0) (EOL (chr 10)) C P (N 0) (L 0) (maxLen 0) (nLines 0)
 	   (F (open Fname)))
       (while (a C (getc F))
@@ -813,12 +824,6 @@
    (let (L (F (open N "r")))
 	(while (not (eof F)) (a L (cons (getl F) L)))
 	(close F) (nrev L)))
-
-(defun readf (f)
-  "outputs list of lines read with readl for file with name f"
-   (let (L R) (a f (open f "r")) 
-	(while (not (eof f)) (a R (readl f)) (if R (a L (append L (list R)))))
-	(close f) L))
 
 (defun dirp (N) ((lambda (X) (and (consp X) (null (car X)))) (st N)))
 

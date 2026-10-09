@@ -1,6 +1,6 @@
 ;-*- mode: emacs-lisp -*-
 ; Old version
-; try with (cgol (getf "data/gldr") 150)
+; try with (cgol (readf "data/gldr") 150)
 (defun cgol (M N) (clr) (princ M) ; conways game of life for N generations
   (prog* ((K (= M '*)) (R (aref (p M) 1)) (C (aref (p M) 2)) (G 0)
 	  (RA {R (i (- R 1))}) (RB {(+ 1 (i (- R 1))) 1})

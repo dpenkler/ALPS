@@ -1,5 +1,5 @@
 ;-*- mode: emacs-lisp -*-
-;; try with (cgol (getf "data/gldr") 150)
+;; try with (cgol (readf "data/gldr") 150)
 ;; or  (cgol M 300)
 (a CGOL_DELAY 0.05)
 (defun cgol (M N) (clr) (princ M) ; conways game of life for N generations

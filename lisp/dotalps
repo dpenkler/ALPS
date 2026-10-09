@@ -7,4 +7,4 @@
 (load "prims.al")
 ;(load "qt.al")
 ;(load 'cgol)
-;(cgol (getf "data/gldr") 100)
+;(cgol (readf "data/gldr") 100)
