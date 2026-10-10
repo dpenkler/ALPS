@@ -1,4 +1,4 @@
-;; Time-stamp: <2026-10-10 12:10:51 dave>
+;; Time-stamp: <2026-10-10 12:27:39 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -820,13 +820,13 @@
       P))
 
 (defun readfl (Fname)
-  "outputs list of lines read with getl for file with name N"
+  "Return list of lines read with getl for file with name Fname"
    (let (L (F (open Fname "r")))
 	(while (not (eof F)) (a L (cons (getl F) L)))
 	(close F) (nrev L)))
 
 (defun readf (Fname)
-  "outputs list of list of lines read with readl for file with name f"
+  "Return list of list of lines read with readl for file with name Fname"
    (let (L R (F (open Fname "r")))
 	(while (not (eof F)) (a R (readl F)) (if R (a L (append L (list R)))))
 	(close F) L))
