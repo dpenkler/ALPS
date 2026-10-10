@@ -1,4 +1,4 @@
-;; Time-stamp: <2026-10-09 12:31:09 dave>
+;; Time-stamp: <2026-10-10 12:10:51 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -803,10 +803,10 @@
     (close F)
     B))
 
-(defun readf (Fname) "Return character array of contents of text file FName"
+(defun readfa (Fname) "Return character matrix of contents of text file FName"
     (let* ((#IO 0) (EOL (chr 10)) C P (N 0) (L 0) (maxLen 0) (nLines 0)
 	   (F (open Fname)))
-      (while (a C (getc F))
+      (while (a C (getc F)) ;; find max line length
 	(cond ((eq C EOL) (a maxLen (c maxLen N) N 0) (incr nLines))
 	      (t (incr N))))
       (rewind F)
@@ -819,11 +819,18 @@
       (close F)
       P))
 
-(defun readfl (N)
+(defun readfl (Fname)
   "outputs list of lines read with getl for file with name N"
-   (let (L (F (open N "r")))
+   (let (L (F (open Fname "r")))
 	(while (not (eof F)) (a L (cons (getl F) L)))
 	(close F) (nrev L)))
+
+(defun readf (Fname)
+  "outputs list of list of lines read with readl for file with name f"
+   (let (L R (F (open Fname "r")))
+	(while (not (eof F)) (a R (readl F)) (if R (a L (append L (list R)))))
+	(close F) L))
+
 
 (defun dirp (N) ((lambda (X) (and (consp X) (null (car X)))) (st N)))
 
@@ -915,7 +922,7 @@
 
 (defun pg (F) "Page file F to terminal"
     (prog* 
-     ((Text (getf F)) (I 0) (L  (- #CH 3)) C (Run t)
+     ((Text (readfa F)) (I 0) (L  (- #CH 3)) C (Run t)
       N (NL (aref (p Text) 1)) (IL (i NL))
       (Disp '(lambda (L)
 	       (cond ((lt I 0) (a I 0)))

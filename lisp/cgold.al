@@ -1,7 +1,7 @@
 ;-*- mode: emacs-lisp -*-
 ; Old version
-; try with (cgol (readf "data/gldr") 150)
-(defun cgol (M N) (clr) (princ M) ; conways game of life for N generations
+; try with (cgol (readfa "data/gldr") 150)
+(defun cgold (M N) (clr) (princ M) ; conways game of life for N generations
   (prog* ((K (= M '*)) (R (aref (p M) 1)) (C (aref (p M) 2)) (G 0)
 	  (RA {R (i (- R 1))}) (RB {(+ 1 (i (- R 1))) 1})
 	  (CA {C (i (- C 1))}) (CB {(+ 1 (i (- C 1))) 1}))

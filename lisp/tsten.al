@@ -80,13 +80,16 @@
 ;; equivalent to xm in dyalog APL using stencil: ({+/,⍵}⌺3 3⊢A)-A
 ;; 
 
-(defconst GLDR (readf "data/gldr"))
+(defconst GLDR (readfa "data/gldr"))
 
 (defun gol (F M N) (clr) (princ M) ; conways game of life for N generations
   (let* ((K (= M '*)) K1 K2 L (#IO 0))
     (FOR H 1 N   (wait .01)
 	 (setq L (F K))
 	 (prat 1 1) (princ (aref " *" (setq K (v (= L 3) (^ (= L 2) K))))))))
+
+;; (mapc '(lambda (F) (gol F GLDR 200)) '(sm om cm xm))
+
 
 (de tgol (N)
     (let ((fns '(sm om cm xm)) K (M GLDR) T0 T1)

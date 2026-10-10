@@ -965,8 +965,8 @@
 
 ;; Sorted unique word list from text file
 (de SUWLfromFile (N)
- (ASort(RemDupW(MakeArray " " (RedBlank(RepChar "\I\"" " " (rav (readf N))))))))
-;; (SWLfromFile "data/errnos")
+ (ASort(RemDupW(MakeArray " " (RedBlank(RepChar "\I\"" " " (rav (readfa N))))))))
+;; (SUWLfromFile "data/errnos")
 
 ;; 9. Find the number of occurrences of word W in list L
 (defun Wocc (W L) (r '+ (. '^ '= L W)))

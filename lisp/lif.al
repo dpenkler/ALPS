@@ -281,7 +281,7 @@
 
 (de LoadFile (F N B) "Read file F from host and put it into the image B as N as PDATA"
     (if (null F) (a F N))
-    (let ((File (getfB F)))
+    (let ((File (getf F)))
       (if (eql (tk -4 N) ".ASC") (a File (RepChar "\n" "\M" File))) ;; DOSSIFY
       (AllocFile N File (hex "EA0A") (p File)  B)))
 
@@ -306,15 +306,7 @@
 	   (close F)))
     'done)
 
-(de getfB (Name) "get binary contents of file Name as chr"
-    (let ((S (st Name)) F R)
-      (cond ((equal (car S) Name)
-	     (a F (open Name)
-		R (getb F (cadr S))) ;; size of file in cadr S
-	     (close F) R)
-	    (t (error "No such file")))))
-
-(defun LoadImage (ImageFile)  (getfB ImageFile))
+(defun LoadImage (ImageFile)  (getf ImageFile))
 
 
 (defun SaveImage (ImageFile B) 
