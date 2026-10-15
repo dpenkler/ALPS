@@ -699,23 +699,23 @@
 (defun ColourString (X) (prog ((#IO 0))(aref ColArr X ())))
 
 
-(setq Canvas (mkwdgt EZ_WIDGET_3D_CANVAS nil
-			(list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
-			      (list  EZ_SIZE [512 512])
-			      (list  EZ_BACKING_STORE 1))))
+(if (null #GV)
+    (a #GV (mkwdgt EZ_WIDGET_3D_CANVAS nil
+		   (list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
+			 (list  EZ_SIZE [512 512])
+			 (list  EZ_BACKING_STORE 1)))))
 
 (defun Ginit2D () ; uses default canvas
-  (gcanvas Canvas)
-  (dispwdgt Canvas)
+  (dispwdgt #GV)
   (glinit)
-  (gdisable EZ_DEPTH_TEST EZ_LIGHTING EZ_CULL_FACE )
+  (FOR I 0 14 (gdisable I))
+  (gsmodel EZ_FLAT)
   (proj nil)
   (gclear)
   )
 
 (defun Ginit3D ()  ; uses default canvas
-  (gcanvas Canvas)
-  (dispwdgt Canvas)
+  (dispwdgt #GV)
   (glinit)
   (gsmodel EZ_SMOOTH)
   (proj t)
@@ -804,7 +804,7 @@
 
 (setq plot_clear t)
 
-(defun plot (L) ; Note #DM and #WN are free in plot
+(defun plot (L) ; Note #GV, #DM and #WN are free in plot
   (prog
    ((#IO 1) (#PN 1) (#OP [0 0 0])  (#NF [1 -1]) X Wmin Wmax
     (Cevent ; Canvas event
@@ -815,11 +815,10 @@
 		       (print (list (caddr E) (car (cdddr E)))))
 		      ))))))
    (cond ((atom L) (a L (list L))))
-   (gcanvas Canvas)
-   (dispwdgt Canvas)
+   (dispwdgt #GV)
    (glinit)
    (gdisable EZ_DEPTH_TEST  EZ_LIGHTING EZ_CULL_FACE)
-   (cfgwdgt Canvas  (list (list EZ_EVENT_HANDLER Cevent)))
+   (cfgwdgt #GV  (list (list EZ_EVENT_HANDLER Cevent)))
    (a L
       (mapcar
        '(lambda (X)
@@ -842,13 +841,12 @@
 
 (defun Plot (X) ; plot a list of vectors
   (let ((#PN 1) (#DM 2) (#WN) (#OP [0 0 0]) (#NF [1 -1]) H L)
-    (gcanvas Canvas)
     (gdisable EZ_DEPTH_TEST EZ_LIGHTING EZ_CULL_FACE) 
     (setq H (max (implod (mapcar max X))))
     (setq L (min (implod (mapcar min X))))
     ;; (print (fmt "Window is " (setq #WN {-1 1 L H})))
     (proj nil)
-    (dispwdgt Canvas)
+    (dispwdgt #GV)
     (glinit)
     (if plot_clear (gclear))
     (axes)
@@ -974,31 +972,23 @@
         (cat 1 (p {2 N N} (cat 1 (tr A) A))
 	     (p {2 N N} (cat 1 (p {N N} 0) (p {N N} 1))))))
 
-(defun GP () ; perspective demo
-	(let ((G (list (mkmesh (i (% [-.5 .05 .5])) (% (i [0 0.05 2])) 2)))
-	      (#DM EZ_QMESH) (#OP [2 2 2]))
-	(genable EZ_CULL_FACE)
-	(gdisable EZ_DEPTH_TEST)
-	(proj t)
-	(Gplay G)))
-
-(defun GO (F) ;ortho
-  (let ((#DM 2)
-	(#OP [0 0 1])
-	(#NF [1 -1])
-	(#WN [-2 2 -2 2]))
-    (proj nil)
-    (genable EZ_CULL_FACE)
-    (gdisable EZ_DEPTH_TEST)
-    (F) 'ok))
-
 (a GplayHook nil)
 (defun Gplay (X) ; fool with X 
   (prog* (
-	 (XFORM '(lambda (X Y) (mapcar '(lambda (Z) (if (nump Z) (. '+ '* Y Z) Z)) X)))
-	 (SHOW  '(lambda (X) 
-		   (let ((#OP O) (#NF NF)
-			 (XM (mm (mm (mktransmat T) M) A))) ;;; apply translation last
+	  (XFORM '(lambda (X XM)
+		    (let (TM TT)
+		      (mapcan '(lambda (Z)
+				 (if (not (nump Z)) (list Z)
+				   (cond ((eql (p Z) [4 4]) ;; It's a transmat
+					  (a TM Z) ;; add it to xforms
+					  nil)
+					 (t (cond (TM (a TT TM TM nil)
+						      (list (. '+ '* TT  (. '+ '* XM Z))))
+						  (t (list (. '+ '* Y Z))))))))
+		      X))))
+	  (SHOW  '(lambda (X) 
+		    (let ((#OP O) (#NF NF)
+			  (XM (mm (mm (mktransmat T) M) A))) ;; apply translation last
 		     ;(princl (fmt "#OP " #OP::1 " #NF " #NF " NF " NF " T " T))
 		     (proj t) ;; need this if #OP or #NF have changed
 		     (graf (XFORM X XM))
@@ -1079,9 +1069,11 @@
 		   (FOR I 1 R
 			(FOR J 1 D
 			     (aset A (aref Amps J) 3 3)
-			     (gclear) (SHOW X) (wait .05)))))
+			     (gclear) (SHOW X)
+			     ;;(wait .05)
+			     ))))
 		((eq C "z") (princ "enter filename ") 
-		 (gsave Canvas {(read) ".ppm"}))
+		 (gsave #GV {(read) ".ppm"}))
 		((equal C (chr 27)) (break))
 		(t (print (list 'got C (num C) '?))))))
 	  (gclear) (SHOW X))
@@ -1149,6 +1141,12 @@
 
 (defun Circ (R P N) (+ P (* R (o '% [2 1] (* (i N) (/ (% 2) N))))))
 
+(defun PCirc ()
+  (let ((#WN [-1 1 -1 1]) (#DM EZ_LINE_LOOP))
+    (Ginit2D)
+    (FOR I 1 10 (graf (Circ (/ I 10) 0 50)))))
+
+
 (defun SPatch (LA LO DA DO D) (print (tr (p [4 3] ;; Sphere patch
   (implod (mapcar 
 	   '(lambda (X) { (* D (cos (cadr X)) (cos (car X)))
@@ -1163,14 +1161,12 @@
   (mapcar '(lambda (Latitude) (SPatch Latitude Longitude (% S) (% S) D))
            (explod (% (i (implod (list -.5 S .5)))))))
 
-(defun mksphere (D S) (mapcan sstrip (explod (% (i (implod (list 0 S 2)))))))
+(defun mksphere (D S) (mapcan sstrip (explod (% (i {0 S 2})))))
 
 (defun mkpoly (N) 
   (let ((P (% (i { 0 (/ 2 N) (- 2 (/ N))}))))
   (p {4 N} {(% 1 P) (% 2 P) (p N 0) (p N 1) } )))
 				
-;(a Sphere (mksphere 1 .1))
-
 (defun sinc (X FS) (let* ((T (* FS (% X)))
 			  (B (+ T (* (% 0.5) (= T 0))))
 			  (C (+ T (= T 0))))
@@ -1201,6 +1197,7 @@
 
 (defun Rotoplots (N M) ;; (Rotoplots 6 4)
   (prog (TR L H P R (AX "XYZ")
+	    (#PN 1)
 	    (#PM EZ_LINES)
 	    (#DM EZ_QUAD_STRIP)
 	    (#OP [0 0 2])
@@ -1231,7 +1228,7 @@
 ;	      (wait 1)
 	      ))))
 (defun TL (X Y) 
-  (let ((G (mkmesh (% (i [-.5 .1 .5])) (% (i [0 0.25 2])) 5)))
+  (let ((G (mkmesh (% (i [-.5 .05 .5])) (% (i [0 0.05 2])) 5)))
     (gclear)
     (genable EZ_CULL_FACE EZ_DEPTH_TEST EZ_LIGHTING EZ_LIGHT0)
     (glmodel EZ_LIGHT_MODEL_LOCAL_VIEWER 1)
@@ -1241,13 +1238,17 @@
     (setq #OP [0 0 15])
     (setq #OF [0 0 0])
     (setq #NF [2 30])
-    (setq #WN [-2 2 -2 2])
+    (setq #WN [-1 1 -1 1])
+    (Ginit3D)
     (proj t)
     (light EZ_LIGHT0 EZ_POSITION [0 0 10 0])
     (gmat EZ_FRONT EZ_DIFFUSE [0.8 0.8 0 1])
     (gmat EZ_BACK  EZ_DIFFUSE [0 0.8 0.8 1])
-    (Gplay (list (PS X Y)
-					; (mm (mktransmat [0 0 0]) G)
+    (Gplay (list ;(PS X Y)
+	    (mktransmat [0  1.6 0]) G
+	    (mktransmat [0 -1.6 0]) G
+	    (mktransmat [1.6 0  0]) G
+	    (mktransmat [-1.6 0 0]) G
 		 ))
     ))
 
@@ -1274,12 +1275,16 @@
 	 (#OF {0 0 (- N)})
 	 (#NF {N  (- N)})
 	 (#WN {(- I) I (- I) I})
+	 (#GV (mkwdgt EZ_WIDGET_3D_CANVAS nil
+		  (list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
+			(list  EZ_SIZE [512 512])
+			(list  EZ_BACKING_STORE 1))))
+
 	 (ZL I)) ;; Z clip limit
     (aset Obj (o '% [9 11] K) [2 1] () ()) ;; split real and im to planes 2 & 1
     (aset Obj (f ZL (c (- ZL) (* Scale (re Res)))) 3 () ()) ;; scale & clip res
 ;;    (aset Obj (* Scale (re Res)) 3 () ()) ;; scale & clip res
-    (gcanvas Canvas)
-    (dispwdgt Canvas)
+    (dispwdgt #GV)
     (glinit)
     (genable EZ_CULL_FACE EZ_DEPTH_TEST EZ_LIGHTING EZ_LIGHT0)
     (glmodel EZ_LIGHT_MODEL_AMBIENT [1 1 1 0])
@@ -1292,5 +1297,5 @@
     (proj t)
     (gclear)
     (Gplay (list Obj))
-    (hidewdgt Canvas)
+    (hidewdgt #GV)
 ))

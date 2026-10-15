@@ -32,21 +32,20 @@
        (tr (enc (p 3 256) (RepElem '(lambda (V) (= C1 V)) C2 (dec 256 (tr A))))))
 
 (defun ShowPPM (F) "Show PPM file in graphics window"
-       (let (ppmCanvas (S (rev (tk 2 (p (ReadPPM F))))))
+       (let (#GV (S (rev (tk 2 (p (ReadPPM F))))))
 	 (require 'graf)
 	 ;; Note since ppmCanvas is a local variable the window will disappear
 	 ;; when the gc runs
-	 (a ppmCanvas (mkwdgt EZ_WIDGET_3D_CANVAS nil
-			      (list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
-				    (list  EZ_SIZE (+ S 2))
-				    (list  EZ_BACKING_STORE 1))))
-	 (gcanvas ppmCanvas)
-	 (dispwdgt ppmCanvas)
+	 (a #GV (mkwdgt EZ_WIDGET_3D_CANVAS nil
+			(list (list  EZ_ORIENTATION EZ_VERTICAL_BOTTOM)
+			      (list  EZ_SIZE (+ S 2))
+			      (list  EZ_BACKING_STORE 1))))
+	 (dispwdgt #GV)
 	 (glinit)
 	 (gdisable EZ_DEPTH_TEST EZ_LIGHTING EZ_CULL_FACE )
 	 (proj nil)
 ;;	 (gclear)
-	 (gwar ppmCanvas)
+	 (gwar #GV)
 	 (gload F)
 	 ))
 
