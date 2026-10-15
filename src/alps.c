@@ -1,5 +1,5 @@
 /*                           VERSION  -8.40-                                */
-#define REV          "Time-stamp: <2026-10-15 10:34:30 dave>"
+#define REV          "Time-stamp: <2026-10-15 19:03:17 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -33,7 +33,7 @@
 #define Circumspect 1
 #define Low         2
 #define High        3
-#define MMDBUG      Circumspect
+#define MMDBUG      None
  
 #define FORWARD      /* We have forward declarations here my dear Blaise */
 #define ENVONLY  1
@@ -742,7 +742,7 @@ static const struct funent evtab[] = {
   {s_pairlis, 	"pairlis", 	subr, 44},
   /* Symbol stuff */
   {s_qquot, 	"qquote",       evar,  0},
-  {s_quote, 	"quote", 	fsubr, 0},
+  {s_quote, 	"quote", 	fsubr, 1},
   {s_gensym, 	"gensym", 	fsubr, 0},
   {s_oblis, 	"oblis", 	fsubr, 0},
   {s_clear, 	"clear", 	fsubr, 1},
@@ -12003,8 +12003,9 @@ stkp +--------------+
 
   switch (opcd) {
 
-  case s_con:    error(inv_fun,"const");          break;
-  case s_quote:  sendRes(parm.rg->ar);            goto alret;
+  case s_con:    error(inv_fun,"const");                         break;
+  case s_quote:  if (isCons(parm)) {sendRes(parm.rg->ar);        goto alret;}
+                 error(inv_funarg, "quote needs an argument");
 
   case s_ratom:
     if (nargs(parm)==1) saveF(arg1(parm)); /* check arg & save on stack     */
@@ -15171,7 +15172,10 @@ stkp +--------------+
     } else { /* we have a cons <=> not a const and not a sym */
       p1 = car(iexp); /* check out the function */
       if (isSym(p1)) {
-	if (isQuote(p1)) { sendRes(cadr(iexp)); goto alcnt; }
+	if (isQuote(p1)) {
+	  if (isCons(cdr(iexp))) { sendRes(cadr(iexp)); goto alcnt; }
+	  else error(inv_funarg, "quote needs an argument");
+	}
 	switch (evtab[p1.at->spl].lispEval) {
 	case expr:
 	case fexpr: /* function is one of lambda and the boys */
@@ -15425,7 +15429,9 @@ stkp +--------------+
     p1 = car(iexp);
     if (isConst(p1))           { sendRes(p1);         INCCT(evact,0); }
     else if (isSym(p1))        { sendRes(lookup(p1)); INCCT(evact,1); }
-    else if (isQuote(car(p1))) { sendRes(cadr(p1));   INCCT(evact,2); }
+    else if (isQuote(car(p1)))
+      if (isCons(cdr(p1)))     { sendRes(cadr(p1));   INCCT(evact,2); }
+      else error(inv_funarg, "quote needs an argument");
     else { 
       save(iexp); 
       iexp = car(iexp); 
@@ -15442,7 +15448,9 @@ stkp +--------------+
     iexp = car(iexp);           /* iexp contains final arg to be evaluated */
     if (isConst(iexp))           { sendRes(iexp);         INCCT(evact,5); }
     else if (isSym(iexp))        { sendRes(lookup(iexp)); INCCT(evact,6); } 
-    else if (isQuote(car(iexp))) { sendRes(cadr(iexp));   INCCT(evact,7); } 
+    else if (isQuote(car(iexp)))
+      if (isCons(cdr(iexp)))       { sendRes(cadr(iexp));   INCCT(evact,7); }
+      else error(inv_funarg, "quote needs an argument");
     else { 
       goreto(eval,s_eva_end);   /* s_eva_end is TAIL mark */
       INCCT(evact,8);
@@ -15462,9 +15470,12 @@ stkp +--------------+
     /* here are the expensive but pretty girls */
     
   case s_sys_eval: /* the soul of the machine */
-    if (isConst(iexp))      { sendRes(iexp);         INCCT(evct,0); goto alret;}
-    if (isSym(iexp))        { sendRes(lookup(iexp)); INCCT(evct,1); goto alret;}
-    if (isQuote(car(iexp))) { sendRes(cadr(iexp));   INCCT(evct,2); goto alret;}
+    if (isConst(iexp))       { sendRes(iexp);         INCCT(evct,0); goto alret;}
+    if (isSym(iexp))         { sendRes(lookup(iexp)); INCCT(evct,1); goto alret;}
+    if (isQuote(car(iexp))) {
+      if (isCons(cdr(iexp))) { sendRes(cadr(iexp));   INCCT(evct,2); goto alret;}
+      else error(inv_funarg, "quote needs and argument");
+    }
 #if (TAIL!=true)
     evald++;
     save(iexp);
