@@ -1,4 +1,4 @@
-;; Time-stamp: <2026-10-10 12:27:39 dave>
+;; Time-stamp: <2026-10-13 18:12:37 dave>
 ;; -*- mode: emacs-lisp; -*-
 ;; princl, listf and ll
 ;; prime stuff moved to prime.al
@@ -803,21 +803,11 @@
     (close F)
     B))
 
-(defun readfa (Fname) "Return character matrix of contents of text file FName"
-    (let* ((#IO 0) (EOL (chr 10)) C P (N 0) (L 0) (maxLen 0) (nLines 0)
-	   (F (open Fname)))
-      (while (a C (getc F)) ;; find max line length
-	(cond ((eq C EOL) (a maxLen (c maxLen N) N 0) (incr nLines))
-	      (t (incr N))))
-      (rewind F)
-      (cond ((zerop N) nil) (t (incr nLines) (setq N 0)))
-      
-      (setq P (p {nLines maxLen} " ") L 0 N 0)
-      (while (a C (getc F))
-	(cond ((eq C EOL) (incr L) (setq N 0))
-	      (t (aset P C L N) (incr N))))
-      (close F)
-      P))
+(defun readfa (Fname)
+  "Return character matrix of contents of text file FName"
+  (let ((#IO 0) (L (readfl Fname)) P (maxlen 0) (N 0))
+    (mapc '(lambda (R) (a maxlen (c maxlen (p R)))) L)
+    (implod .5 (mapcar '(lambda (R) (tk maxlen R)) L))))
 
 (defun readfl (Fname)
   "Return list of lines read with getl for file with name Fname"
@@ -830,7 +820,6 @@
    (let (L R (F (open Fname "r")))
 	(while (not (eof F)) (a R (readl F)) (if R (a L (append L (list R)))))
 	(close F) L))
-
 
 (defun dirp (N) ((lambda (X) (and (consp X) (null (car X)))) (st N)))
 
