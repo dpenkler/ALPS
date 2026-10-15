@@ -329,10 +329,21 @@ char * specToString(pointer lex) {
     return specBuf;
   }
   if (isFob(lex)) {
-    memcpy(specBuf,"#<fob:",n+=6);
-    len = min(nels(lex.fb->name),(sizeof(specBuf) - 8));
-    memcpy(&specBuf[6],vadd(lex.fb->name).sp,len);
-    memcpy(&specBuf[len+6],">",2);
+    memcpy(specBuf,"#<fob(",n+=6);
+    len = strlen(fobTypeDesc[lex.fb->type]);
+    memcpy(&specBuf[n],fobTypeDesc[lex.fb->type],len);
+    n += len;
+    if (isNil(lex.fb->name)) {
+	memcpy(&specBuf[n],")",2);
+	goto out;
+      }
+    memcpy(&specBuf[n],"):",2);
+    n += 2;
+    len = min(nels(lex.fb->name),(sizeof(specBuf) - (n + 2)));
+    memcpy(&specBuf[n],vadd(lex.fb->name).sp,len);
+    n += len;
+    memcpy(&specBuf[n],">",2);
+  out:
     return specBuf;
   }
   return NULL;

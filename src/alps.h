@@ -98,7 +98,7 @@
 /* number of apl contants of different types */
 #define apl_ncon        46  /* numerics   */
 #define apl_ccon        2   /* characters */
-#define apl_wcon        21 /* words these are pointers */
+#define apl_wcon        22 /* words these are pointers */
 #define apl_consts      (apl_ncon + apl_ccon + apl_wcon)
 
 /* These would be static const char but stupid gcc considers constants in
@@ -377,7 +377,7 @@ typedef union ctable {
     /*chr*/                                hgs, hcp,          /* 40 */
     /*ref*/                                         hdx, hrf, /* 40 */
     /*ref*/ hpf, hlf, hhf, hrs, hex, hlx, hnm, hws, hsw, hhs, /* 50 */
-    /*ref*/ hpr, hlp, hlh, hqq, hkb, hpc, hgb, hdb, hal;      /* 60 */
+    /*ref*/ hpr, hlp, hlh, hqq, hkb, hpc, hgv, hgb, hdb, hal; /* 60 */
     /*-------1----2----3----4----5----6----7----8----9---10---------*/
   } v;
 } ctable;
@@ -397,6 +397,7 @@ extern uchar specCS[],whiteCS[],digitCS[],alphaCS[],symStCS[],wordCS[];
 extern const char *mHist;
 extern pointer chartab[];
 extern fibrec *fparr[];
+extern const char *fobTypeDesc[];
 extern pointer pnil,ptru;
 extern integer protind;
 extern pointer protstk[];

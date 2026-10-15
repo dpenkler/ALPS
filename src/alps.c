@@ -1,5 +1,5 @@
 /*                           VERSION  -8.40-                                */
-#define REV          "Time-stamp: <2026-10-08 16:05:09 dave>"
+#define REV          "Time-stamp: <2026-10-15 10:34:30 dave>"
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -277,7 +277,7 @@ typedef enum { /* primitive and auxiliary case entries in bigEval */
   s_graf,    s_loc,     s_proj,    s_gmat,    s_light,   s_glmodel,
   s_gsmodel, s_mkwdgt,  s_cfgwdgt, s_dispwdgt,s_hidewdgt,s_wdgtdata,
   s_gsldrval,s_gdialval,s_gfsval,  s_gtxtval, s_gtxtclr, s_gtxtset, 
-  s_gcanvas, s_gsave,   s_gload,   s_gwar,    s_gresize,
+  s_gsave,   s_gload,   s_gwar,    s_gresize,
   /* Host operating system and file system functions */
   s_sys,     s_getenv,  s_setenv,    s_dl,      s_wd,      s_pu,
   s_rn,      s_st,
@@ -588,17 +588,26 @@ static const char *typeDesc[] = {
   "Any"                                       // 38
 };
 
+/* Foreign OBject type descriptions see fobtp */
+const char *fobTypeDesc[] = {
+  "None" ,      //0
+  "File" ,      //1
+  "Buffer",     //2
+  "Instrument", //3
+  "Widget"      //4
+  };
+
 /**** Lisp function entry table *****/
 
 static const struct funent evtab[] = {
   {s_nop, 	"nop",          evar,  0},
-  {s_cond, 	"cond", 	fsubr, 0},
-  {s_fun, 	"fun",  	fsubr, 0},
-  {s_defun, 	"de", 	        fsubr, 0},
-  {s_defexpr, 	"df", 	        fsubr, 0},
-  {s_defmacro, 	"dm", 	        fsubr, 0},
-  {s_defclos, 	"dc", 	        fsubr, 0},
-  {s_defconst, 	"defconst",     fsubr, 0},
+  {s_cond, 	"cond", 	fsubr, 1},
+  {s_fun, 	"fun",  	fsubr, 1},
+  {s_defun, 	"de", 	        fsubr, 1},
+  {s_defexpr, 	"df", 	        fsubr, 2},
+  {s_defmacro, 	"dm", 	        fsubr, 1},
+  {s_defclos, 	"dc", 	        fsubr, 1},
+  {s_defconst, 	"defconst",     fsubr, 1},
   /* Application, evaluation, binding and prog */
   {s_apply, 	"apply", 	subr,  7},
   {s_eval, 	"eval", 	subr,  8},
@@ -611,21 +620,21 @@ static const struct funent evtab[] = {
   {s_fexpr, 	"fexpr", 	fexpr, 0},
   {s_macro, 	"macro", 	fexpr, 0},
   /*   Lisp control flow primitives    */
-  {s_let,       "let",          fsubr, 0},
-  {s_letstar,   "let*",         fsubr, 0},
-  {s_prog, 	"prog", 	fsubr, 0},
-  {s_progstar,  "prog*",        fsubr, 0},
+  {s_let,       "let",          fsubr, 1},
+  {s_letstar,   "let*",         fsubr, 1},
+  {s_prog, 	"prog", 	fsubr, 1},
+  {s_progstar,  "prog*",        fsubr, 1},
   {s_return, 	"return", 	subr, 18},
   {s_go, 	"go", 	        subr,  2}, /* checked by go */
-  {s_if, 	"if",  	        fsubr, 0},
-  {s_when,  	"when",         fsubr, 0},
-  {s_unless, 	"unless",       fsubr, 0},
-  {s_while, 	"while", 	fsubr, 0},
-  {s_repeat, 	"repeat", 	fsubr, 0},
-  {s_catch, 	"catch", 	fsubr, 0},
+  {s_if, 	"if",  	        fsubr, 1},
+  {s_when,  	"when",         fsubr, 1},
+  {s_unless, 	"unless",       fsubr, 1},
+  {s_while, 	"while", 	fsubr, 1},
+  {s_repeat, 	"repeat", 	fsubr, 1},
+  {s_catch, 	"catch", 	fsubr, 1},
   {s_throw, 	"throw", 	subr,  4},
-  {s_uwdprot,   "uwp",          fsubr, 0},
-  {s_ccase,     "cc",           fsubr, 0},
+  {s_uwdprot,   "uwp",          fsubr, 1},
+  {s_ccase,     "cc",           fsubr, 1},
   {s_error,	"error",        subr,  9},
   {s_cwcc, 	"cwcc", 	subr, 10},
   /*     Task handling                 */
@@ -648,11 +657,11 @@ static const struct funent evtab[] = {
   {s_findc, 	"findc", 	subr, 15},
   {s_sort, 	"sort", 	subr, 16},
  /*         Interpreter control        */
-  {s_break, 	"break", 	fsubr, 0},
+  {s_break, 	"break", 	fsubr, 1},
   {s_wait, 	"wait", 	subr, 17},/*n,tcb list ,fil list*/
   {s_thaw,  	"thaw",         fsubr, 0},
   {s_freeze,  	"freeze",       fsubr, 0},
-  {s_dbg, 	"dbg", 	        fsubr, 0},
+  {s_dbg, 	"dbg", 	        fsubr, 1},
   {s_trace, 	"trc",  	fsubr, 0},
   {s_kill, 	"kill",  	subr, 102},
   {s_load, 	"load", 	subr,  9},
@@ -696,10 +705,10 @@ static const struct funent evtab[] = {
   {s_subset, 	"subset", 	subr, 25},
   /*     Lisp logical connectives      */
   {s_not, 	"not",  	subr, 26},
-  {s_and, 	"and",  	fsubr, 0},
-  {s_or,	"or",   	fsubr, 0},
-  {s_nand, 	"nand",  	fsubr, 0},
-  {s_nor,	"nor",   	fsubr, 0},
+  {s_and, 	"and",  	fsubr, 1},
+  {s_or,	"or",   	fsubr, 1},
+  {s_nand, 	"nand",  	fsubr, 1},
+  {s_nor,	"nor",   	fsubr, 1},
   /* Dudes who attack lists with knives */
   {s_delete, 	"delete", 	subr, 24},
   {s_rplaca, 	"rplaca", 	subr, 27},
@@ -736,10 +745,10 @@ static const struct funent evtab[] = {
   {s_quote, 	"quote", 	fsubr, 0},
   {s_gensym, 	"gensym", 	fsubr, 0},
   {s_oblis, 	"oblis", 	fsubr, 0},
-  {s_clear, 	"clear", 	fsubr, 0},
-  {s_spec,      "a",            fsubr, 0},  /* specification ass */
-  {s_setq, 	"setq", 	fsubr, 0},
-  {s_setqq, 	"setqq", 	fsubr, 0},
+  {s_clear, 	"clear", 	fsubr, 1},
+  {s_spec,      "a",            fsubr, 1},  /* specification ass */
+  {s_setq, 	"setq", 	fsubr, 1},
+  {s_setqq, 	"setqq", 	fsubr, 1},
   {s_set, 	"set",  	subr,  4},
   {s_pop, 	"pop",  	subr,  3},
   {s_push, 	"push", 	subr,  5},
@@ -762,8 +771,8 @@ static const struct funent evtab[] = {
   {s_implod, 	"implod", 	subr, 34},
   {s_explod, 	"explod", 	subr, 35},
   /* Arithmetic convenience */
-  {s_incr,      "incr",         fsubr, 0},
-  {s_decr,      "decr",         fsubr, 0},
+  {s_incr,      "incr",         fsubr, 1},
+  {s_decr,      "decr",         fsubr, 1},
   {s_sqrt,      "sqrt",         subr, 36},
   {s_modexp,    "modexp",       subr, 90},
   {s_int,       "int",          subr, 36},
@@ -887,7 +896,7 @@ static const struct funent evtab[] = {
   {s_cio, 	"cio", 	        subr, 75},
   /* Graphics */
   {s_gclear, 	"gclear", 	fsubr, 0},
-  {s_gupdate, 	"gupdate",      subr, 97},
+  {s_gupdate, 	"gupdate",      fsubr, 0},
   {s_glinit, 	"glinit",       fsubr, 0},
   {s_genable, 	"genable",      subr, 77},
   {s_gdisable, 	"gdisable",     subr, 77},
@@ -915,7 +924,6 @@ static const struct funent evtab[] = {
   {s_gtxtval,   "gtxtval",      subr, 82},
   {s_gtxtclr,   "gtxtclr",      subr, 82},
   {s_gtxtset,   "gtxtset",      subr, 83},
-  {s_gcanvas,   "gcanvas",      subr, 82},
   {s_gsave,     "gsave",        subr, 83},
   {s_gload,     "gload",        subr,103},
   {s_gwar,      "gwar",         subr, 82},
@@ -1281,13 +1289,14 @@ static conentT  h_consts[apl_consts] =   {
   {"#LH", ref, s_var,   0,  0}, /*62 #LH Load History                       */
   {"#QQ", ref, s_var,   0,  0}, /*63 #QQ Quasiquote simplify hook           */
   {"#KB", ref, s_var,   0,  0}, /*64 #KB KeyBoard translation assoc list    */
-  {"#PC", ref, s_var,   0,  0}, /*65 #PC performance counter list           */
-  {"#GB", ref, s_var,   0,  0}, /*66 #GB Graphics Buffer nil=Front t=Back   */
-  {"#DB", ref, s_var,   0,  0}, /*67 #DB Debug flag for mreptcb             */
-  {"#AL", ref, s_var,   0,  0}  /*68 #AL optional arguments list            */
+  {"#PC", ref, s_con,   0,  0}, /*65 #PC performance counter list           */
+  {"#GV", ref, s_var,   0,  0}, /*66 #GV Graphics 3D Canvas                 */
+  {"#GB", ref, s_var,   0,  0}, /*67 #GB Graphics Buffer nil=Front t=Back   */
+  {"#DB", ref, s_var,   0,  0}, /*68 #DB Debug flag for mreptcb             */
+  {"#AL", ref, s_con,   0,  0}  /*69 #AL optional arguments list            */
 }; /* zero origin */
 
-#define NUM_APL_CONST 69 /* set this to last index + 1 above for check */
+#define NUM_APL_CONST 70 /* set this to last index + 1 above for check */
 
 #if (NUM_APL_CONST!=apl_consts)
 Number of apl constants do no match!
@@ -1320,7 +1329,7 @@ hcval h_cval =  {
 
 /*ref initialiser indeces. These are indexes into rootable: r.a[8]==r.s.snil */
 static const hwval h_wval = 
-  { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
+  { 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8 };
 
 /* Interpreter error messages */
 
@@ -3278,7 +3287,7 @@ static integer stkDepth(cntTp c)    {  return(stkSize(c)/indlen);       }
 /* Foreign Object control block structure memory management */
 
 pointer allocFob(fobtp   type,   pointer name,
-			pointer data1,	pointer data2,	integer size) {
+		 pointer data1,	pointer data2,	integer size) {
   pointer lex;
   integer fsize;
   fsize = sizeof(fobrec) + size;
@@ -3379,7 +3388,7 @@ static pointer allocBuf(pointer lex) {
   fibrec *fex;
 
   protect(lex);
-  res = allocFob(buft,s[s_buf],crashme,crashme,sizeof(fibrec));
+  res = allocFob(buft,pnil,crashme,crashme,sizeof(fibrec));
   unprotect();
   fex = res.fb->fobpvt.fi;   /* pointer to fibrec */
   fex->fob     = res;  /* pointer to fob    */
@@ -7792,12 +7801,12 @@ static void checkSymList(pointer lex) {
   }
 }
 static void checkDef(pointer lex, char *msg) {
-  if (!isCons(iexp)) error(inv_funarg,msg);
-    checkFunName(car(iexp));
-    if (!isCons(cdr(iexp)) || !isList(cadr(iexp)))
+  if (!isCons(lex)) error(inv_funarg,msg);
+    checkFunName(car(lex));
+    if (!isCons(cdr(lex)) || !isList(cadr(lex)))
       error(inv_funarg,"Expected argument list");
-    checkSymList(cadr(iexp));
-    if (!isList(cddr(iexp))) error(inv_funarg,"Invalid function body");
+    checkSymList(cadr(lex));
+    if (!isList(cddr(lex))) error(inv_funarg,"Invalid function body");
 }
 
 static integer checkAxis(pointer tex, int lim) {
@@ -13155,6 +13164,7 @@ stkp +--------------+
      /* fsubrs */
   case s_glinit:    sendRes(glinit());                     goto alret;
   case s_gclear:    sendRes(gclear());                     goto alret;
+  case s_gupdate:   sendRes(gupdate());                    goto alret;
     /* subrs */
   case s_genable:   sendRes( genable(nargs(parm),parm));   goto srend;
   case s_gdisable:  sendRes(gdisable(nargs(parm),parm));   goto srend;
@@ -13175,8 +13185,6 @@ stkp +--------------+
   case s_gtxtval:   sendRes(gtxtval(nargs(parm),parm));    goto srend;
   case s_gtxtclr:   sendRes(gtxtclr(nargs(parm),parm));    goto srend;
   case s_gtxtset:   sendRes(gtxtset(nargs(parm),parm));    goto srend;
-  case s_gcanvas:   sendRes(gcanvas(nargs(parm),parm));    goto srend; 
-  case s_gupdate:   sendRes(gupdate(nargs(parm),parm));    goto srend;
   case s_gsave:     sendRes(gsave(nargs(parm),parm));      goto srend; 
   case s_gload:     sendRes(gload(nargs(parm),parm));      goto srend; 
   case s_gwar:      sendRes(gwar(nargs(parm),parm));       goto srend; 
@@ -13188,7 +13196,7 @@ stkp +--------------+
   case s_gmat:     case s_light:    case s_glmodel:  case s_gsmodel:
   case s_mkwdgt:   case s_cfgwdgt:  case s_dispwdgt: case s_hidewdgt: 
   case s_gsldrval: case s_gdialval: case s_gfsval:   case s_gtxtval: 
-  case s_gtxtclr:  case s_gtxtset:  case s_gcanvas:  case s_wdgtdata:
+  case s_gtxtclr:  case s_gtxtset:  case s_wdgtdata:
   case s_gload:    case s_gwar:     case s_gresize:  case s_loc:   
     error(not_imp,"GRAF");
 #endif
@@ -14498,6 +14506,7 @@ stkp +--------------+
     goto alret;
 
   case s_defclos: /* fsubr */
+    if (!isCons(iexp)) error(inv_funarg, "((dc (Name Args+) Body)");
     p1 = car(iexp); 
     if (!isList(p1)) error(inv_funarg,"(dc (Name Args+) Body)");
     p2 = car(p1);
@@ -15252,7 +15261,9 @@ stkp +--------------+
 	INCCT(appct,1);
 	opcd = iexp.at->spl;
 #if (CKARGS)	
-	 if (!chkList(parm)) error(inv_funarg,"fsubr parms not a list");
+	if (!chkList(parm)) error(inv_funarg,"fsubr parms not a list");
+	if  (!evtab[opcd].fparmTemplate && !isNil(parm))
+	  error(inv_numarg,"takes no arguments");
 #endif
 	break;
       case evar: 
@@ -15481,6 +15492,11 @@ stkp +--------------+
 	opcd = iexp.at->spl; /* execute directly and hope it's well behaved! */
 	iexp = parm;         /* fsubrs must dig through iexp themselves      */
 	INCCT(evct,5);       /* eval fsubr                                   */
+#if (CKARGS)	
+	if (!chkList(parm)) error(inv_funarg,"fsubr parms not a list");
+	if  (!evtab[opcd].fparmTemplate && !isNil(parm))
+	  error(inv_numarg,"takes no arguments");
+#endif
 	goto alcnt;
       case evar:
 	iexp = lookup(iexp);  /* look up value of variable symbol in iexp */

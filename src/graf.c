@@ -85,9 +85,19 @@ static EZ_Widget *getWidget(pointer lex) {
   return(ret);
 }
 
+static EZ_Widget * CheckAndSet3DCanvas() {
+  EZ_Widget *ret = NULL;
+  pointer lex = lookup(a.v.hgv);
+  if (!isNil(lex)) {
+    ret = getWidget(lex);
+    EZ_Set3DCanvas(ret);
+  }
+  return ret;
+}
+
 /* Must set and display canvas before calling **/
 pointer glinit() {
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   number *cc = getNumVec(a.v.hcc);    /* Clear Colour Vector                  */
   EZ_SetBackBuffer(EZ_PIXMAP);        /* set back buffer for X11 prims        */
   EZ_DrawBuffer(EZ_BACK);             /* Allocate back buffer in case         */
@@ -102,7 +112,7 @@ pointer glinit() {
 static bool alps_light = false;
 
 pointer gclear() {
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   EZ_DrawBuffer(isNil(lookup(a.v.hgb))? EZ_FRONT : EZ_BACK);
   EZ_Clear(EZ_COLOR_BUFFER_BIT | EZ_DEPTH_BUFFER_BIT);
   return(ptru);
@@ -111,7 +121,7 @@ pointer gclear() {
 pointer genable(int n, pointer p) {
   int i,mode;
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   for (i=0;i<n;i++) {
     mode = getInt(lex = argn(i,p));
     EZ_Enable(mode);
@@ -123,7 +133,7 @@ pointer genable(int n, pointer p) {
 pointer gdisable(int n, pointer p) {
   int i,mode;
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   for (i=0;i<n;i++) {
     mode = getInt(lex = argn(i,p));
     EZ_Disable(mode);
@@ -136,7 +146,7 @@ pointer gmaterial(int n, pointer p) {
   int i,face,propName;
   float propVal[4];
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   face     = getInt(arg1(p));
   propName = getInt(arg2(p));
   lex      = arg3(p);
@@ -149,7 +159,7 @@ pointer glight(int n, pointer p) {
   int i,lightNum,propName;
   float propVal[4];
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   lightNum = getInt(arg1(p));
   propName = getInt(arg2(p));
   lex      = arg3(p);
@@ -162,7 +172,7 @@ pointer glightmod(int n, pointer p) {
   int i,propName;
   float propVal[4];
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   propName = getInt(arg1(p));
   lex      = arg2(p);
   for (i=0;i<min(nels(lex),4);i++) propVal[i] = vadd(lex).np[i];
@@ -173,7 +183,7 @@ pointer glightmod(int n, pointer p) {
 pointer gshademod(int n, pointer p) {
   int shadeModel;
   pointer lex;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   lex = arg1(p);
   shadeModel = getInt(lex);
   EZ_ShadeModel(shadeModel);
@@ -183,7 +193,7 @@ pointer gshademod(int n, pointer p) {
 static int alps_proj = 0;
 pointer proj(int p) { /* if(p==false) then ortho else perspective proj */
   number  *wn,*nf,*op,*of,*vp;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return pnil;
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   wn = getNumVec(a.v.hwn); /* xy window */
   nf = getNumVec(a.v.hnf); /* Near and Far planes along Z axis */
   op = getNumVec(a.v.hop); /* Observer Position */
@@ -198,9 +208,11 @@ pointer proj(int p) { /* if(p==false) then ortho else perspective proj */
     EZ_LoadIdentity();
     EZ_LookAt(op[0], op[1], op[2], of[0], of[1], of[2], 0.0, 1.0, 0.0); /* y is up */
   } else {
+    EZ_MatrixMode(EZ_PROJECTION);
+    EZ_LoadIdentity();
     EZ_MatrixMode(EZ_MODELVIEW);
     EZ_LoadIdentity();
-    EZ_Ortho(wn[0], wn[1], wn[2], wn[3], nf[0], nf[1]);
+    EZ_Ortho2(wn[0], wn[1], wn[2], wn[3]);
   }
   EZ_ViewPort(vp[0], vp[1], vp[2], vp[3]);
 
@@ -280,7 +292,7 @@ pointer plot(integer narg, pointer p) {
   integer i,j,n,dimd,rep,rep2,pen,mode,pmode,mmode,style,width,font_set=0;
   uint tmp;
   number tem,xlo,xhi,*win;
-  if ((ez_fd < 0) || !EZ_Get3DCanvas()) return(pnil);
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return(pnil);
   win   = getNumVec(a.v.hwn);
   xlo   = win[0];
   xhi   = win[1];
@@ -1004,22 +1016,12 @@ pointer gtxtset(integer n, pointer p) {
   return(lex);
 }
 
-pointer gcanvas(integer n, pointer p) {
-  if (ez_fd < 0) return(pnil);
-  EZ_Widget *w = getWidget(arg1(p));
-  EZ_Set3DCanvas(w);
-  return(ptru);
-}
-pointer gupdate(integer n, pointer p) {
-  EZ_Widget *w;
-  if (n > 1) error(inv_numarg,"(gupdate [canvas])");
-  if (n == 1)  {
-    EZ_Widget *w = getWidget(arg1(p));
-    EZ_Set3DCanvas(w);
-  }
+pointer gupdate() {
+  if ((ez_fd < 0) || !CheckAndSet3DCanvas()) return pnil;
   EZ_SwapBuffers();
   return(ptru);
 }
+
 pointer gresize(integer n, pointer p) {
   int width,height;
   if (ez_fd < 0) return(pnil);
@@ -1045,7 +1047,7 @@ pointer gload(integer n, pointer parms) {
   idstr tline;
   float p[4],zl;
   number *imsp,sclh,sclw,scl;
-  if ((ez_fd < 0) || !(w = EZ_Get3DCanvas())) return(pnil);
+  if ((ez_fd < 0) || !(w = CheckAndSet3DCanvas())) return(pnil);
   if (n < 1 || n > 3) error(inv_numarg,"(gload <image-file-name> [<scale> [<imgspec>]])");
   if (!isChr(arg1(parms)) || ((n == 2) && (!isNum(arg2(parms)))))
     error(inv_funarg,"(gload <image-file-name> [<scale> [<imgspec>]])");
@@ -1147,7 +1149,6 @@ pointer wdgtdata(integer n, pointer p) {
   EZ_Widget *w = getWidget(arg1(p));
   return(mkNum((double)EZ_GetWidgetIntData(w)));
 }
-
 
 static void markCallbacks(void *cb) {
   pointer lex;
