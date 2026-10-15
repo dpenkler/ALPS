@@ -984,7 +984,7 @@
 					  nil)
 					 (t (cond (TM (a TT TM TM nil)
 						      (list (. '+ '* TT  (. '+ '* XM Z))))
-						  (t (list (. '+ '* Y Z))))))))
+						  (t (list (. '+ '* XM Z))))))))
 		      X))))
 	  (SHOW  '(lambda (X) 
 		    (let ((#OP O) (#NF NF)
